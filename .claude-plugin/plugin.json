@@ -1,0 +1,9 @@
+{
+  "name": "magpie",
+  "version": "0.1.0",
+  "description": "Reuse before you write: ladder + safety floor + cost line.",
+  "author": {
+    "name": "crispuscrew",
+    "url": "https://github.com/crispuscrew"
+  }
+}

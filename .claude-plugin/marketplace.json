@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "magpie",
+  "description": "Reuse before you write.",
+  "owner": {
+    "name": "crispuscrew",
+    "url": "https://github.com/crispuscrew"
+  },
+  "plugins": [
+    {
+      "name": "magpie",
+      "description": "Reuse ladder + safety floor + cost line.",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}
