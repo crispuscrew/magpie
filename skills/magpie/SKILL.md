@@ -50,7 +50,8 @@ Off-limits to the ladder, always: understanding the problem, input
 validation at trust boundaries, error handling that prevents data loss,
 security, accessibility, anything the user explicitly asked to keep. A
 request to simplify, optimize, or clean up never includes the floor —
-keep it, simplify around it.
+keep it, simplify around it: an atomic write stays atomic, validation
+stays at the boundary; removing either is a bug, not a simplification.
 
 Hardware is never the spec ideal — a clock drifts, a sensor reads off, a
 PWM driver runs a few percent fast. Leave the calibration knob, not just
