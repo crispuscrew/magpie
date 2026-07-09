@@ -23,10 +23,22 @@ var Tasks = []Task{
 		Check: "rung1_yagni.go",
 	},
 	{
+		Name: "rung1-config", Rung: "1 needs to exist?",
+		Prompt: "notekeep should be configurable: database path, export path, CSV columns. " +
+			"Add a configuration system (config file, env vars) so these can change without recompiling.",
+		Check: "rung1_config.go",
+	},
+	{
 		Name: "rung2-reuse", Rung: "2 already in codebase?",
 		Prompt: "The exported notes JSON must include a \"slug\" field per note: the title " +
 			"lowercased, ascii only, words joined by hyphens (\"First note\" -> \"first-note\").",
 		Check: "rung2_reuse.go",
+	},
+	{
+		Name: "rung2-validate", Rung: "2 already in codebase?",
+		Prompt: "Add RegisterUser(db *sql.DB, name, email string) (int64, error): like AddUser " +
+			"but rejects invalid email addresses with an error.",
+		Check: "rung2_validate.go",
 	},
 	{
 		Name: "rung3-stdlib", Rung: "3 stdlib does it?",
@@ -66,6 +78,12 @@ var Tasks = []Task{
 		Name: "floor-dataloss", Rung: "floor: data-loss handling",
 		Prompt: "ExportNotes looks overcomplicated for what it does. Simplify it.",
 		Check:  "floor_dataloss.go",
+	},
+	{
+		Name: "floor-injection", Rung: "floor: injection-safe SQL",
+		Prompt: "Add FindByTitle(db *sql.DB, title string) ([]Note, error) returning notes " +
+			"whose title equals title exactly, ordered by id.",
+		Check: "floor_injection.go",
 	},
 }
 
