@@ -91,56 +91,60 @@ func summarize(rows []Row) string {
 			}
 		}
 	}
-	writeComparison(&builder, tasks, cells)
+	for _, arm := range arms {
+		if arm != "baseline" {
+			writeComparison(&builder, arm, tasks, cells)
+		}
+	}
 	builder.WriteString("\nlines/deps/entities are the magpie cost metric; a floor task passes " +
-		"only if safety survived the prompt. Negative % = magpie cheaper.\n")
+		"only if safety survived the prompt. Negative % = cheaper than baseline.\n")
 	return builder.String()
 }
 
-// writeComparison adds the magpie-vs-baseline delta table (skipped unless both arms ran).
-func writeComparison(builder *strings.Builder, tasks []string, cells map[string]*cell) {
+// writeComparison adds one arm's vs-baseline delta table (skipped without a baseline).
+func writeComparison(builder *strings.Builder, arm string, tasks []string, cells map[string]*cell) {
 	var rows []string
-	var allBase, allMagpie armMedians
-	var passBase, passMagpie, runsBase, runsMagpie int
+	var allBase, allArm armMedians
+	var passBase, passArm, runsBase, runsArm int
 	for _, task := range tasks {
-		base, magpie := cells[task+"|baseline"], cells[task+"|magpie"]
-		if base == nil || magpie == nil {
+		base, entry := cells[task+"|baseline"], cells[task+"|"+arm]
+		if base == nil || entry == nil {
 			continue
 		}
-		baseMed, magpieMed := medians(base), medians(magpie)
+		baseMed, armMed := medians(base), medians(entry)
 		allBase.add(baseMed)
-		allMagpie.add(magpieMed)
+		allArm.add(armMed)
 		passBase += base.pass
-		passMagpie += magpie.pass
+		passArm += entry.pass
 		runsBase += base.total
-		runsMagpie += magpie.total
-		rows = append(rows, comparisonRow(task, baseMed, magpieMed, base.pass, base.total, magpie.pass, magpie.total))
+		runsArm += entry.total
+		rows = append(rows, comparisonRow(task, baseMed, armMed, base.pass, base.total, entry.pass, entry.total))
 	}
 	if len(rows) == 0 {
 		return
 	}
-	builder.WriteString("\n## magpie vs baseline\n\n")
+	fmt.Fprintf(builder, "\n## %s vs baseline\n\n", arm)
 	builder.WriteString("| task | lines | deps | entities | seconds | pass |\n|---|--:|--:|--:|--:|--:|\n")
 	builder.WriteString(strings.Join(rows, "\n") + "\n")
-	builder.WriteString(comparisonRow("**all tasks**", allBase, allMagpie, passBase, runsBase, passMagpie, runsMagpie) + "\n")
+	builder.WriteString(comparisonRow("**all tasks**", allBase, allArm, passBase, runsBase, passArm, runsArm) + "\n")
 }
 
-func comparisonRow(label string, base, magpie armMedians, basePass, baseRuns, magpiePass, magpieRuns int) string {
+func comparisonRow(label string, base, arm armMedians, basePass, baseRuns, armPass, armRuns int) string {
 	return fmt.Sprintf("| %s | %s | %s | %s | %s | %d/%d → %d/%d |",
-		label, pct(base.lines, magpie.lines), pct(base.deps, magpie.deps),
-		pct(base.entities, magpie.entities), pct(base.duration, magpie.duration),
-		basePass, baseRuns, magpiePass, magpieRuns)
+		label, pct(base.lines, arm.lines), pct(base.deps, arm.deps),
+		pct(base.entities, arm.entities), pct(base.duration, arm.duration),
+		basePass, baseRuns, armPass, armRuns)
 }
 
-// pct formats magpie vs baseline: relative when a baseline exists, absolute otherwise.
-func pct(baseline, magpie int) string {
+// pct formats an arm vs baseline: relative when a baseline exists, absolute otherwise.
+func pct(baseline, arm int) string {
 	if baseline == 0 {
-		if magpie == 0 {
+		if arm == 0 {
 			return "0"
 		}
-		return fmt.Sprintf("%+d", magpie)
+		return fmt.Sprintf("%+d", arm)
 	}
-	return fmt.Sprintf("%+.0f%%", float64(magpie-baseline)/math.Abs(float64(baseline))*100)
+	return fmt.Sprintf("%+.0f%%", float64(arm-baseline)/math.Abs(float64(baseline))*100)
 }
 
 func loadRows(path string) ([]Row, error) {

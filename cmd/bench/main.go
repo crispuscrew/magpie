@@ -20,6 +20,7 @@ func main() {
 	fixture := flag.String("fixture", "benchmarks/fixture", "fixture project dir")
 	checks := flag.String("checks", "benchmarks/checks", "task checks dir")
 	rule := flag.String("rule", "AGENTS.md", "magpie rule file for the magpie arm")
+	armsDir := flag.String("arms-dir", "benchmarks/arms", "rule files for extra arms (<name>.md)")
 	out := flag.String("out", "benchmarks/results", "results dir")
 	checkCmd := flag.String("check-cmd", "", "override check command ({dir} = work tree)")
 	image := flag.String("image", "localhost/magpie-bench", "container image for the auto check")
@@ -64,6 +65,7 @@ func main() {
 	}
 	summary, err := bench.Run(bench.Config{
 		FixtureDir: *fixture, ChecksDir: *checks, RulePath: *rule, OutDir: *out,
+		ArmsDir: *armsDir,
 		Backend: backend, Model: *model, Arms: strings.Split(*arms, ","),
 		Tasks: selected, Repeat: *repeat, CheckCmd: *checkCmd,
 		Image: *image, EngineFlags: *engineFlags,

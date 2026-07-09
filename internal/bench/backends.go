@@ -42,23 +42,32 @@ func (ClaudeBackend) Run(ctx context.Context, workdir, prompt, rule, model strin
 	}
 	cmd := exec.CommandContext(ctx, "claude", args...)
 	cmd.Dir = workdir
-	out, err := cmd.Output()
-	if err != nil {
-		return RunOutcome{}, fmt.Errorf("claude: %w: %s", err, tail(out, 400))
-	}
+	out, runErr := cmd.Output()
 	var result struct {
 		DurationMs   int64   `json:"duration_ms"`
 		TotalCostUSD float64 `json:"total_cost_usd"`
 		IsError      bool    `json:"is_error"`
 		Result       string  `json:"result"`
 	}
-	if err := json.Unmarshal(out, &result); err != nil {
-		return RunOutcome{}, fmt.Errorf("claude output: %w", err)
+	parsed := json.Unmarshal(out, &result) == nil
+	if runErr != nil || (parsed && result.IsError) {
+		msg := tail(out, 400)
+		if parsed && result.Result != "" {
+			msg = head(result.Result, 300) // the failure reason leads the result text
+		}
+		return RunOutcome{}, fmt.Errorf("claude (%v): %s", runErr, msg)
 	}
-	if result.IsError {
-		return RunOutcome{}, fmt.Errorf("claude: %s", tail([]byte(result.Result), 400))
+	if !parsed {
+		return RunOutcome{}, fmt.Errorf("claude output not json: %s", tail(out, 400))
 	}
 	return RunOutcome{DurationMs: result.DurationMs, CostUSD: result.TotalCostUSD}, nil
+}
+
+func head(text string, max int) string {
+	if len(text) <= max {
+		return text
+	}
+	return text[:max] + "…"
 }
 
 // OllamaBackend is single-shot chat; fenced file blocks in the reply are applied.

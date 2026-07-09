@@ -13,15 +13,34 @@ import (
 // Config drives one benchmark invocation.
 type Config struct {
 	FixtureDir, ChecksDir, RulePath, OutDir string
+	ArmsDir                                 string // rule files for arms beyond baseline/magpie
 	Backend                                 Backend
 	Model                                   string
-	Arms                                    []string // subset of baseline, magpie
+	Arms                                    []string // baseline, magpie, or any <ArmsDir>/<name>.md
 	Tasks                                   []Task
 	Repeat                                  int
 	CheckCmd                                string // shell command run in the work tree; "" = auto-detect
 	Image, EngineFlags                      string // container image + extra engine flags for the auto check
 	RunTimeout                              time.Duration
 	Keep                                    bool // keep work trees for debugging
+}
+
+// armRuleText resolves an arm to its injected rule ("" = baseline).
+func armRuleText(cfg Config, arm string) (string, error) {
+	path := ""
+	switch arm {
+	case "baseline":
+		return "", nil
+	case "magpie":
+		path = cfg.RulePath
+	default:
+		path = filepath.Join(cfg.ArmsDir, arm+".md")
+	}
+	text, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("arm %q: %w", arm, err)
+	}
+	return string(text), nil
 }
 
 // Row is one (task, arm, repetition) result.
@@ -36,16 +55,20 @@ type Row struct {
 	Error      string  `json:",omitempty"`
 }
 
+// retryWaits paces recovery from transient failures and subscription quota
+// windows during long unattended runs; each retry gets a fresh work tree.
+var retryWaits = []time.Duration{time.Minute, 10 * time.Minute, 30 * time.Minute,
+	time.Hour, time.Hour, time.Hour, time.Hour, time.Hour, time.Hour}
+
 // Run executes tasks × arms × repeats, streams JSONL rows, writes the summary.
 func Run(cfg Config) (string, error) {
+	rules := map[string]string{}
 	for _, arm := range cfg.Arms {
-		if arm != "baseline" && arm != "magpie" {
-			return "", fmt.Errorf("unknown arm %q (want baseline or magpie)", arm)
+		text, err := armRuleText(cfg, arm)
+		if err != nil {
+			return "", err
 		}
-	}
-	rule, err := os.ReadFile(cfg.RulePath)
-	if err != nil {
-		return "", err
+		rules[arm] = text
 	}
 	if cfg.CheckCmd == "" {
 		cfg.CheckCmd = autoCheckCmd(cfg.Image, cfg.EngineFlags)
@@ -64,12 +87,16 @@ func Run(cfg Config) (string, error) {
 
 	for _, task := range cfg.Tasks {
 		for _, arm := range cfg.Arms {
-			armRule := ""
-			if arm == "magpie" {
-				armRule = string(rule)
-			}
 			for rep := 1; rep <= cfg.Repeat; rep++ {
-				row := runOne(cfg, task, arm, armRule)
+				row := runOne(cfg, task, arm, rules[arm])
+				for _, wait := range retryWaits {
+					if row.Error == "" {
+						break
+					}
+					fmt.Printf("%-16s %-8s rep %d: retry in %s: %s\n", task.Name, arm, rep, wait, row.Error)
+					time.Sleep(wait)
+					row = runOne(cfg, task, arm, rules[arm])
+				}
 				row.Rep = rep
 				fmt.Printf("%-16s %-8s rep %d: pass=%-5v lines=%-4d deps=%d entities=%d %s\n",
 					task.Name, arm, rep, row.Pass, row.Lines, row.Deps, row.Entities, row.Error)
