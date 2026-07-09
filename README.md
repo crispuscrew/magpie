@@ -1,8 +1,6 @@
 # magpie
 
-Reuse before you write. Makes an AI coding agent build with what already exists — the cheapest code is the code never written.
-
-Before any code, the agent stops at the first ladder rung that holds:
+Reuse before you write. An AI-agent rule that stops at the first ladder rung that holds:
 
 1. Needs to exist at all? → skip it (YAGNI)
 2. Already in this codebase? → reuse it
@@ -12,7 +10,20 @@ Before any code, the agent stops at the first ladder rung that holds:
 6. One line? → one line
 7. Only then: the minimum that works
 
-Two things ponytail-style rules don't have: a **cost line** — `cost: +N lines, +D deps, +E entities` — that makes every pick provable, and a **floor** that is never simplified away (trust-boundary validation, data-loss handling, security, accessibility, one runnable check per non-trivial change). Deliberate shortcuts are marked in place: `// reuse: <ceiling>, <upgrade path>`.
+Every pick is proven by a cost line — `cost: +N lines, +D deps, +E entities` — and the **floor** is never simplified away, even when the prompt says "simplify": trust-boundary validation, data-loss handling, security, accessibility, one runnable check. Deliberate shortcuts are marked `// reuse: <ceiling>, <upgrade path>`.
+
+## Measured
+
+Real agentic Claude Code sessions (opus), 12 tasks × 4 arms × 3 reps, medians, correctness-gated. Every arm runs the same bench — rule files in `benchmarks/arms/`, method and raw rows in [benchmarks/](benchmarks/).
+
+| arm | lines | entities | pass | floor kept |
+|---|--:|--:|--:|--:|
+| baseline (no rule) | — | — | 35/36 | 8/9 |
+| **magpie** | **−55%** | −38% | **36/36** | **9/9** |
+| ponytail | −45% | −43% | 33/36 | 8/9 |
+| caveman | −33% | −5% | 36/36 | 9/9 |
+
+lines/entities = median change vs baseline across all tasks, wash cases included; floor kept = floor probes passed (validation under "optimize it", atomic write under "simplify it", SQL injection bait). Best magpie cases: speculative config system −73%, DB constraint over app code −100%. Where magpie costs more it says so: the one-liner task runs +18% lines because the floor demands a runnable check a bare agent skips.
 
 ## Install
 
@@ -36,10 +47,8 @@ All host files are generated from `AGENTS.md` (`make adapters`); CI fails on dri
 
 ## Verify the numbers
 
-`benchmarks/` measures baseline vs magpie on the exact metric the rule claims — lines, deps, entities — plus a correctness gate and floor probes. See `benchmarks/README.md`.
+`make bench` reruns everything: 12 tasks (one or two per rung + three floor probes) against a real Go fixture, any arm vs baseline, every check proven passable by a committed reference solution — `benchmarks/README.md`.
 
 ## Develop
 
-`make help` lists targets; everything but `make bench` runs in a container (Podman or Docker).
-
-Apache-2.0.
+`make help`; everything but `make bench` runs in a container (Podman or Docker). Apache-2.0.
