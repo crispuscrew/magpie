@@ -6,15 +6,17 @@ DNS_FLAGS ?=
 ifneq (,$(findstring podman,$(ENGINE)))
 ENGINE_FLAGS := --userns=keep-id
 endif
-RUN_RO = $(ENGINE) run --rm $(ENGINE_FLAGS) -v $(CURDIR):/work:ro,Z -w /work $(IMAGE)
-RUN_RW = $(ENGINE) run --rm $(ENGINE_FLAGS) -v $(CURDIR):/work:Z -w /work $(IMAGE)
+# expands in recipes only, so `make help` works without an engine
+ENGINE_REQ = $(if $(ENGINE),$(ENGINE),$(error no container engine found: install podman or docker))
+RUN_RO = $(ENGINE_REQ) run --rm $(ENGINE_FLAGS) -v $(CURDIR):/work:ro,Z -w /work $(IMAGE)
+RUN_RW = $(ENGINE_REQ) run --rm $(ENGINE_FLAGS) -v $(CURDIR):/work:Z -w /work $(IMAGE)
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
 	  | awk 'BEGIN{FS=":.*?## "}{printf "  %-16s %s\n", $$1, $$2}'
 
 build: ## Build the container image (tests, lint, task checks)
-	$(ENGINE) build $(DNS_FLAGS) -t $(IMAGE) .
+	$(ENGINE_REQ) build $(DNS_FLAGS) -t $(IMAGE) .
 
 test: ## Harness + fixture tests, in the container
 	$(RUN_RO) sh -c 'go test ./... && cd benchmarks/fixture && go test ./...'
