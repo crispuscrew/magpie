@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -52,8 +53,11 @@ func (ClaudeBackend) Run(ctx context.Context, workdir, prompt, rule, model strin
 	parsed := json.Unmarshal(out, &result) == nil
 	if runErr != nil || (parsed && result.IsError) {
 		msg := tail(out, 400)
+		var exitErr *exec.ExitError
 		if parsed && result.Result != "" {
 			msg = head(result.Result, 300) // the failure reason leads the result text
+		} else if errors.As(runErr, &exitErr) && len(exitErr.Stderr) > 0 {
+			msg = tail(exitErr.Stderr, 400)
 		}
 		return RunOutcome{}, fmt.Errorf("claude (%v): %s", runErr, msg)
 	}
