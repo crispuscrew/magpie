@@ -16,7 +16,7 @@ Rows stream to `results/<stamp>-<backend>-<model>.jsonl`; medians land in the ma
 
 ## How a run works
 
-Copy fixture → git commit → agent gets the task prompt (non-baseline arm: rule as system prompt) → metrics from the staged diff → the task's check (`checks/`) is injected as `taskcheck_test.go` → `go test -tags taskcheck` runs in the container (host `go` is the no-engine fallback). An errored run is retried once on a fresh work tree; a second failure is recorded as an error row.
+Copy fixture → git commit → agent gets the task prompt (non-baseline arm: rule as system prompt) → metrics from the staged diff → the task's check (`checks/`) is injected as `taskcheck_test.go` → `go test -tags taskcheck` runs in the container (host `go` is the no-engine fallback). An errored run is retried on a fresh work tree with escalating waits (1m, 10m, 30m, then hourly, up to 9 retries in total - rides out subscription quota windows); an error row is recorded only after all retries fail.
 
 ## Read the numbers honestly
 
