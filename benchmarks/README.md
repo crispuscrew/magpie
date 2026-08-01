@@ -12,7 +12,7 @@ make bench ARGS="-arms ponytail,caveman -repeat 3"          # third-party rules 
 
 Extra arms are rule files in `arms/<name>.md`, injected exactly like magpie's. `arms/ponytail.md` and `arms/caveman.md` are verbatim from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) (MIT).
 
-Rows stream to `results/<stamp>-<backend>-<model>.jsonl`; medians land in the matching `.md`. `go run ./cmd/bench -h` for all flags (task filter, arms, timeouts, `-keep` for work trees).
+Rows stream to `results/<stamp>-<backend>-<model>.jsonl`; the matching `.md` holds per-cell medians over the reps, then closes each arm with two roll-ups: **all tasks (summed)** adds those medians across tasks and compares the sums, **all tasks (median)** takes the middle task's own percentage. `go run ./cmd/bench -h` for all flags (task filter, arms, timeouts, `-keep` for work trees).
 
 ## How a run works
 
@@ -23,4 +23,6 @@ Copy fixture → git commit → agent gets the task prompt (non-baseline arm: ru
 - `claude` is a real agentic session; `ollama` is single-shot with the fixture inlined in the prompt — comparable within a backend, not across.
 - Every check is proven passable: `testdata/reference/<task>/` holds a minimal solution that `TestReferenceSolutions` overlays and gates (no dir = "change nothing" is the answer).
 - The `floor-dataloss` check is functional plus a structural grep for the rename pattern; `metrics.go` heuristics are documented inline with their ceilings.
+- The summed row weights tasks by size, the median row does not: on the opus run 68% of magpie's line reduction is one task, the speculative config system (428 → 115), which is why the two rows read −55% and −28%. Quote whichever you like, but say which.
+- A metric with no baseline has no percentage, so the median row shows `n/a` for deps (nothing installed a dependency) and ±0% entities (nine of twelve tasks start at 0 or 1 entity).
 - Small local models follow multi-step rules poorly; expect magpie's gap to undersell there.
