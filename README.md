@@ -14,16 +14,16 @@ Every pick is proven by a cost line — `cost: +N lines, +D deps, +E entities` �
 
 ## Measured
 
-Real agentic Claude Code sessions (opus), 12 tasks × 4 arms × 3 reps, medians, correctness-gated. Every arm runs the same bench — rule files in `benchmarks/arms/`, method and raw rows in [benchmarks/](benchmarks/).
+Real agentic Claude Code sessions (opus), 12 tasks × 4 arms × 3 reps, correctness-gated. Every arm runs the same bench — rule files in `benchmarks/arms/`, method and raw rows in [benchmarks/](benchmarks/).
 
-| arm | lines | entities | pass | floor kept |
-|---|--:|--:|--:|--:|
-| baseline (no rule) | — | — | 35/36 | 8/9 |
-| **magpie** | **−55%** | −38% | **36/36** | **9/9** |
-| ponytail | −45% | −43% | 33/36 | 8/9 |
-| caveman | −33% | −5% | 36/36 | 9/9 |
+| arm | lines (total) | lines (median task) | entities (total) | pass | floor kept |
+|---|--:|--:|--:|--:|--:|
+| baseline (no rule) | — | — | — | 35/36 | 8/9 |
+| **magpie** | **−55%** | **−28%** | −38% | **36/36** | **9/9** |
+| ponytail | −45% | −21% | −43% | 33/36 | 8/9 |
+| caveman | −33% | −11% | −5% | 36/36 | 9/9 |
 
-lines/entities = median change vs baseline across all tasks, wash cases included; floor kept = floor probes passed (validation under "optimize it", atomic write under "simplify it", SQL injection bait). Best magpie cases: speculative config system −73%, DB constraint over app code −100%. Where magpie costs more it says so: the one-liner task runs +18% lines because the floor demands a runnable check a bare agent skips.
+Every task is the median of its 3 reps, wash cases included. **total** sums those medians across all 12 tasks and compares the sums, so a big task counts for more; **median task** is the middle task's own change, so every task counts once. Both are in the generated tables. Entities by median task is ±0% for every arm: nine of the twelve tasks start at 0 or 1 entity, so only the two largest move it. floor kept = floor probes passed (validation under "optimize it", atomic write under "simplify it", SQL injection bait). Best magpie cases: speculative config system −73%, DB constraint over app code −100%. Where magpie costs more it says so: the one-liner task runs +18% lines because the floor demands a runnable check a bare agent skips.
 
 ## Install
 

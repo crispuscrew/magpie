@@ -41,7 +41,8 @@ func Resummarize(jsonlPath string) (string, error) {
 }
 
 // summarize renders task×arm medians + deltas, derived only from rows so old
-// .jsonl files re-render.
+// .jsonl files re-render. The median is per cell, over the reps; the all-tasks
+// row sums those medians and takes one ratio, so it is not a median over tasks.
 func summarize(rows []Row) string {
 	if len(rows) == 0 {
 		return "no rows\n"
@@ -97,7 +98,8 @@ func summarize(rows []Row) string {
 		}
 	}
 	builder.WriteString("\nlines/deps/entities are the magpie cost metric; a floor task passes " +
-		"only if safety survived the prompt. Negative % = cheaper than baseline.\n")
+		"only if safety survived the prompt. Negative % = cheaper than baseline. Each cell is the " +
+		"median of its reps; the summed row adds those medians across tasks, then compares the totals.\n")
 	return builder.String()
 }
 
@@ -105,6 +107,7 @@ func summarize(rows []Row) string {
 func writeComparison(builder *strings.Builder, arm string, tasks []string, cells map[string]*cell) {
 	var rows []string
 	var allBase, allArm armMedians
+	var spread deltaSpread
 	var passBase, passArm, runsBase, runsArm int
 	for _, task := range tasks {
 		base, entry := cells[task+"|baseline"], cells[task+"|"+arm]
@@ -114,6 +117,7 @@ func writeComparison(builder *strings.Builder, arm string, tasks []string, cells
 		baseMed, armMed := medians(base), medians(entry)
 		allBase.add(baseMed)
 		allArm.add(armMed)
+		spread.add(baseMed, armMed)
 		passBase += base.pass
 		passArm += entry.pass
 		runsBase += base.total
@@ -126,7 +130,43 @@ func writeComparison(builder *strings.Builder, arm string, tasks []string, cells
 	fmt.Fprintf(builder, "\n## %s vs baseline\n\n", arm)
 	builder.WriteString("| task | lines | deps | entities | seconds | pass |\n|---|--:|--:|--:|--:|--:|\n")
 	builder.WriteString(strings.Join(rows, "\n") + "\n")
-	builder.WriteString(comparisonRow("**all tasks**", allBase, allArm, passBase, runsBase, passArm, runsArm) + "\n")
+	builder.WriteString(comparisonRow("**all tasks (summed)**", allBase, allArm, passBase, runsBase, passArm, runsArm) + "\n")
+	builder.WriteString(spread.medianRow(passBase, runsBase, passArm, runsArm) + "\n")
+}
+
+// deltaSpread collects each task's own vs-baseline percentage, so the table can
+// report the median task next to the summed total. The two disagree whenever one
+// big task carries the totals, and only showing the sum would oversell that.
+type deltaSpread struct{ lines, deps, entities, duration []int }
+
+func (d *deltaSpread) add(base, arm armMedians) {
+	addDelta(&d.lines, base.lines, arm.lines)
+	addDelta(&d.deps, base.deps, arm.deps)
+	addDelta(&d.entities, base.entities, arm.entities)
+	addDelta(&d.duration, base.duration, arm.duration)
+}
+
+// addDelta records one task's percentage change, skipping a zero baseline: no
+// percentage exists there, and counting it as 0% would dilute the median.
+func addDelta(samples *[]int, baseline, arm int) {
+	if baseline == 0 {
+		return
+	}
+	*samples = append(*samples, int(math.Round(float64(arm-baseline)/math.Abs(float64(baseline))*100)))
+}
+
+func (d *deltaSpread) medianRow(basePass, baseRuns, armPass, armRuns int) string {
+	return fmt.Sprintf("| **all tasks (median)** | %s | %s | %s | %s | %d/%d → %d/%d |",
+		medianPct(d.lines), medianPct(d.deps), medianPct(d.entities), medianPct(d.duration),
+		basePass, baseRuns, armPass, armRuns)
+}
+
+// medianPct is n/a when every task had a zero baseline for that metric.
+func medianPct(samples []int) string {
+	if len(samples) == 0 {
+		return "n/a"
+	}
+	return fmt.Sprintf("%+d%%", median(samples))
 }
 
 func comparisonRow(label string, base, arm armMedians, basePass, baseRuns, armPass, armRuns int) string {
@@ -171,5 +211,11 @@ func median(values []int) int {
 	}
 	sorted := append([]int(nil), values...)
 	sort.Ints(sorted)
-	return sorted[len(sorted)/2]
+	mid := len(sorted) / 2
+	if len(sorted)%2 == 1 {
+		return sorted[mid]
+	}
+	// Even count: average the two middles, so an even number of tasks or reps
+	// does not silently report the upper one as the median.
+	return int(math.Round(float64(sorted[mid-1]+sorted[mid]) / 2))
 }
