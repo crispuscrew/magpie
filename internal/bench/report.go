@@ -7,7 +7,6 @@ import (
 	"math"
 	"os"
 	"slices"
-	"sort"
 	"strings"
 )
 
@@ -99,7 +98,9 @@ func summarize(rows []Row) string {
 	}
 	builder.WriteString("\nlines/deps/entities are the magpie cost metric; a floor task passes " +
 		"only if safety survived the prompt. Negative % = cheaper than baseline. Each cell is the " +
-		"median of its reps; the summed row adds those medians across tasks, then compares the totals.\n")
+		"median of its reps; the summed row adds those medians across tasks, then compares the totals. " +
+		"A task with no baseline for a metric has no percentage and drops out of the median row, which " +
+		"is why deps reads n/a: a new dependency is always a zero baseline.\n")
 	return builder.String()
 }
 
@@ -135,8 +136,7 @@ func writeComparison(builder *strings.Builder, arm string, tasks []string, cells
 }
 
 // deltaSpread collects each task's own vs-baseline percentage, so the table can
-// report the median task next to the summed total. The two disagree whenever one
-// big task carries the totals, and only showing the sum would oversell that.
+// report the median task next to the summed total.
 type deltaSpread struct{ lines, deps, entities, duration []int }
 
 func (d *deltaSpread) add(base, arm armMedians) {
@@ -147,12 +147,13 @@ func (d *deltaSpread) add(base, arm armMedians) {
 }
 
 // addDelta records one task's percentage change, skipping a zero baseline: no
-// percentage exists there, and counting it as 0% would dilute the median.
+// percentage exists there. A zero baseline can only ever grow, so this skips
+// increases and never decreases; the docs say so rather than the row guessing.
 func addDelta(samples *[]int, baseline, arm int) {
 	if baseline == 0 {
 		return
 	}
-	*samples = append(*samples, int(math.Round(float64(arm-baseline)/math.Abs(float64(baseline))*100)))
+	*samples = append(*samples, delta(baseline, arm))
 }
 
 func (d *deltaSpread) medianRow(basePass, baseRuns, armPass, armRuns int) string {
@@ -184,7 +185,13 @@ func pct(baseline, arm int) string {
 		}
 		return fmt.Sprintf("%+d", arm)
 	}
-	return fmt.Sprintf("%+.0f%%", float64(arm-baseline)/math.Abs(float64(baseline))*100)
+	return fmt.Sprintf("%+d%%", delta(baseline, arm))
+}
+
+// delta is one task's percentage change. Both roll-up rows round through here,
+// so the median of a single task always equals that task's own cell.
+func delta(baseline, arm int) int {
+	return int(math.Round(float64(arm-baseline) / math.Abs(float64(baseline)) * 100))
 }
 
 func loadRows(path string) ([]Row, error) {
@@ -209,8 +216,7 @@ func median(values []int) int {
 	if len(values) == 0 {
 		return 0
 	}
-	sorted := append([]int(nil), values...)
-	sort.Ints(sorted)
+	sorted := slices.Sorted(slices.Values(values))
 	mid := len(sorted) / 2
 	if len(sorted)%2 == 1 {
 		return sorted[mid]

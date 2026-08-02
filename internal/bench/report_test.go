@@ -16,6 +16,8 @@ func TestSummarizeComparison(t *testing.T) {
 	for _, want := range []string{
 		"| demo | -60% | +1 | -50% | -50% | 1/1 → 1/1 |",
 		"| **all tasks (summed)** | -60% | +1 | -50% | -50% | 1/1 → 1/1 |",
+		// Pins column order and the deps n/a, so a transposed or missing row fails.
+		"| **all tasks (median)** | -60% | n/a | -50% | -50% | 1/1 → 1/1 |",
 		"# magpie bench — claude / sonnet",
 	} {
 		if !strings.Contains(summary, want) {
@@ -34,7 +36,8 @@ func TestMedianEvenCount(t *testing.T) {
 		{[]int{3, 1, 2}, 2},
 		// 12 tasks: the two middles average, rather than reporting the upper one.
 		{[]int{-100, -100, -73, -60, -45, -39, -16, -10, 0, 0, 0, 18}, -28},
-		{[]int{1, 2, 3, 4}, 3},
+		// Discriminating: the upper middle would be 4, the average is 3.
+		{[]int{1, 2, 4, 5}, 3},
 	}
 	for _, c := range cases {
 		if got := median(c.in); got != c.want {
