@@ -100,7 +100,8 @@ func summarize(rows []Row) string {
 		"only if safety survived the prompt. Negative % = cheaper than baseline. Each cell is the " +
 		"median of its reps; the summed row adds those medians across tasks, then compares the totals. " +
 		"A task with no baseline for a metric has no percentage and drops out of the median row, which " +
-		"is why deps reads n/a: a new dependency is always a zero baseline.\n")
+		"is why deps reads n/a: a new dependency is always a zero baseline. Runs with fewer than " +
+		"5 tasks get no median row at all.\n")
 	return builder.String()
 }
 
@@ -108,7 +109,7 @@ func summarize(rows []Row) string {
 func writeComparison(builder *strings.Builder, arm string, tasks []string, cells map[string]*cell) {
 	var rows []string
 	var allBase, allArm armMedians
-	var spread deltaSpread
+	var dLines, dDeps, dEntities, dSeconds []int
 	var passBase, passArm, runsBase, runsArm int
 	for _, task := range tasks {
 		base, entry := cells[task+"|baseline"], cells[task+"|"+arm]
@@ -118,7 +119,10 @@ func writeComparison(builder *strings.Builder, arm string, tasks []string, cells
 		baseMed, armMed := medians(base), medians(entry)
 		allBase.add(baseMed)
 		allArm.add(armMed)
-		spread.add(baseMed, armMed)
+		addDelta(&dLines, baseMed.lines, armMed.lines)
+		addDelta(&dDeps, baseMed.deps, armMed.deps)
+		addDelta(&dEntities, baseMed.entities, armMed.entities)
+		addDelta(&dSeconds, baseMed.duration, armMed.duration)
 		passBase += base.pass
 		passArm += entry.pass
 		runsBase += base.total
@@ -132,19 +136,17 @@ func writeComparison(builder *strings.Builder, arm string, tasks []string, cells
 	builder.WriteString("| task | lines | deps | entities | seconds | pass |\n|---|--:|--:|--:|--:|--:|\n")
 	builder.WriteString(strings.Join(rows, "\n") + "\n")
 	builder.WriteString(comparisonRow("**all tasks (summed)**", allBase, allArm, passBase, runsBase, passArm, runsArm) + "\n")
-	builder.WriteString(spread.medianRow(passBase, runsBase, passArm, runsArm) + "\n")
+	// Below minMedianTasks a "median" is one or two tasks wearing a statistic's
+	// name, so the row is left out rather than published as noise.
+	if len(rows) >= minMedianTasks {
+		fmt.Fprintf(builder, "| **all tasks (median)** | %s | %s | %s | %s | %d/%d → %d/%d |\n",
+			medianPct(dLines), medianPct(dDeps), medianPct(dEntities), medianPct(dSeconds),
+			passBase, runsBase, passArm, runsArm)
+	}
 }
 
-// deltaSpread collects each task's own vs-baseline percentage, so the table can
-// report the median task next to the summed total.
-type deltaSpread struct{ lines, deps, entities, duration []int }
-
-func (d *deltaSpread) add(base, arm armMedians) {
-	addDelta(&d.lines, base.lines, arm.lines)
-	addDelta(&d.deps, base.deps, arm.deps)
-	addDelta(&d.entities, base.entities, arm.entities)
-	addDelta(&d.duration, base.duration, arm.duration)
-}
+// minMedianTasks is the smallest run that gets a median roll-up.
+const minMedianTasks = 5
 
 // addDelta records one task's percentage change, skipping a zero baseline: no
 // percentage exists there. A zero baseline can only ever grow, so this skips
@@ -154,12 +156,6 @@ func addDelta(samples *[]int, baseline, arm int) {
 		return
 	}
 	*samples = append(*samples, delta(baseline, arm))
-}
-
-func (d *deltaSpread) medianRow(basePass, baseRuns, armPass, armRuns int) string {
-	return fmt.Sprintf("| **all tasks (median)** | %s | %s | %s | %s | %d/%d → %d/%d |",
-		medianPct(d.lines), medianPct(d.deps), medianPct(d.entities), medianPct(d.duration),
-		basePass, baseRuns, armPass, armRuns)
 }
 
 // medianPct is n/a when every task had a zero baseline for that metric.
