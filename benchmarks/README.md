@@ -18,7 +18,9 @@ A rule change ships only after it beats the current rule by more than the contro
 | arm | what it changes | hypothesis |
 |---|---|---|
 | `magpie-tight` | one paragraph of `AGENTS.md`, nothing else | the mandated check is the rule's largest cost; telling it to assert only the new behaviour and reuse existing setup should cut test lines without dropping the check |
-| `magpie-terse` | the whole rule, same semantics in 41% fewer words | caveman, which is only a prose-terseness style, wrote the least code of any arm; if a rule's register carries into its output, a shorter magpie should produce shorter code |
+| `magpie-terse` | the whole rule, same semantics in 56% fewer words (290 vs 666) | caveman, which is only a prose-terseness style with no floor at all, wrote the least code of any arm; if a rule's register carries into its output, a shorter magpie should produce shorter code |
+
+`magpie-terse` is now the shortest rule on the bench, under caveman (491 words) and ponytail (440), so a register effect has somewhere to show. It also costs about 426 tokens against the rule's 956, and that difference is paid on every session forever, so a terse variant that merely ties is already the better rule.
 
 `magpie-tight` is generated from `AGENTS.md` so its diff is exactly one paragraph, which is what makes the result attributable. Regenerate it whenever the rule changes, or the experiment stops being about that paragraph. Both candidates are held to the floor invariants by `TestRuleInvariants`: a rule that tests less is cheaper, and that is the one way to improve the numbers that must never count as a win.
 
