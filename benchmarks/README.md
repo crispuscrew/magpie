@@ -12,7 +12,7 @@ make bench ARGS="-arms ponytail,caveman -repeat 3"          # third-party rules 
 
 Extra arms are rule files in `arms/<name>.md`, injected exactly like magpie's. `arms/ponytail.md` and `arms/caveman.md` are verbatim from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) (MIT).
 
-`arms/magpie-skill.md` is a symlink to `skills/magpie/SKILL.md`, so the arm always is the file the plugin installs, not a copy of it. The `magpie` arm injects `AGENTS.md`; the two are pinned to each other only by the phrases in `TestRuleInvariants`, and the skill is three times longer. Run this arm to measure what users actually get:
+`arms/magpie-skill.md` is a symlink to `skills/magpie/SKILL.md`, so the arm is the file the plugin installs, not a copy of it. That skill is now generated from `AGENTS.md`, so the two arms differ only by the skill's frontmatter, and the arm's job is to catch it if they ever stop matching:
 
 ```bash
 make bench ARGS="-arms magpie,magpie-skill -repeat 3"
@@ -33,5 +33,5 @@ Copy fixture → git commit → agent gets the task prompt (non-baseline arm: ru
 - A metric with no baseline has no percentage and drops out of the median row. Deps therefore always reads `n/a` there: a newly added dependency is by definition a zero baseline, so only the summed row can ever report one. Read `n/a` as "this row cannot tell you", not as "clean". (One opus rep did add a dep, `rung4-native` baseline rep 3; the median of its 3 reps washes it out.)
 - The same skip is one-sided: a zero baseline can only grow, so dropping those tasks drops only regressions. On this run it changes nothing, but the median row can flatter an arm that adds where the baseline had nothing.
 - Ten of the twelve tasks start at 0 or 1 entity, so the entity total rests almost entirely on the two rung-1 tasks; by median task it is ±0% for every arm.
-- Every published number is the `magpie` arm, meaning `AGENTS.md`. The Claude Code plugin ships `skills/magpie/SKILL.md`, a longer file that no committed run covers yet. Until a `magpie-skill` run lands, treat the headline figures as measuring the rule, not the plugin.
+- The published table is the July run, whose baseline over-built far more than the August one did (828 net lines against 555 on the same twelve prompts, no rule involved). A rule can only remove bloat that the model produces, so magpie's measured gap shrinks as the base model improves. Treat any single run's headline as dated, not settled.
 - Small local models follow multi-step rules poorly; expect magpie's gap to undersell there.

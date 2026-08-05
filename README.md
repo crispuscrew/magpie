@@ -29,7 +29,7 @@ Every task is the median of its 3 reps, wash cases included. **total** sums thos
 
 | Host | How |
 |---|---|
-| Claude Code | `/plugin marketplace add crispuscrew/magpie` then `/plugin install magpie@magpie` |
+| Claude Code | `/plugin marketplace add crispuscrew/magpie` then `/plugin install magpie@magpie` (installs `skills/magpie/SKILL.md`) |
 | Codex / Gemini CLI / Copilot CLI / Antigravity and other `AGENTS.md` readers | copy `AGENTS.md` to the repo root |
 | Cursor | copy `.cursor/rules/magpie.mdc` |
 | Windsurf | copy `.windsurf/rules/magpie.md` |
@@ -39,7 +39,7 @@ Every task is the median of its 3 reps, wash cases included. **total** sums thos
 | `.agents/` workspace-rule hosts | copy `.agents/rules/magpie.md` |
 | anything else | paste `AGENTS.md` into the system prompt |
 
-All host files are generated from `AGENTS.md` (`make adapters`); CI fails on drift.
+Every host file, the Claude Code skill included, is generated from `AGENTS.md` (`make adapters`); CI fails on drift. One rule text ships everywhere, so what you install is what gets benchmarked.
 
 ## Skills
 
