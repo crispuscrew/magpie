@@ -34,6 +34,24 @@ func TestSummarizeComparison(t *testing.T) {
 	}
 }
 
+func TestNoiseFloorReportedOnlyWithControl(t *testing.T) {
+	rows := []Row{
+		{Task: "demo", Arm: "baseline", Backend: "claude", Model: "opus", Rep: 1,
+			Metrics: Metrics{Lines: 100, TestLines: intp(0)}, Pass: true},
+		{Task: "demo", Arm: "magpie", Backend: "claude", Model: "opus", Rep: 1,
+			Metrics: Metrics{Lines: 50, TestLines: intp(0)}, Pass: true},
+	}
+	if strings.Contains(summarize(rows), "Noise floor") {
+		t.Error("no control arm ran, so no noise floor can be claimed")
+	}
+	rows = append(rows, Row{Task: "demo", Arm: controlArm, Backend: "claude", Model: "opus", Rep: 1,
+		Metrics: Metrics{Lines: 80, TestLines: intp(0)}, Pass: true})
+	// control drifted 100→80 on identical text, so the floor is 20%.
+	if got := summarize(rows); !strings.Contains(got, "impl -20%, lines -20%") {
+		t.Errorf("noise floor missing or wrong:\n%s", got)
+	}
+}
+
 // Every arm at zero is a broken harness far more often than it is agents that
 // all wrote bad code, and the summary has to say so before anyone reads it.
 func TestSummarizeFlagsTotalCheckFailure(t *testing.T) {
