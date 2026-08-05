@@ -11,6 +11,17 @@ make bench ARGS="-arms ponytail,caveman -repeat 3"               # third-party r
 make bench ARGS="-arms baseline,magpie,control -repeat 3"        # with the noise floor (see below)
 ```
 
+## Candidate rules go in as arms, not into AGENTS.md
+
+A rule change ships only after it beats the current rule by more than the control's own drift. Two candidates are open:
+
+| arm | what it changes | hypothesis |
+|---|---|---|
+| `magpie-tight` | one paragraph of `AGENTS.md`, nothing else | the mandated check is the rule's largest cost; telling it to assert only the new behaviour and reuse existing setup should cut test lines without dropping the check |
+| `magpie-terse` | the whole rule, same semantics in 41% fewer words | caveman, which is only a prose-terseness style, wrote the least code of any arm; if a rule's register carries into its output, a shorter magpie should produce shorter code |
+
+`magpie-tight` is generated from `AGENTS.md` so its diff is exactly one paragraph, which is what makes the result attributable. Regenerate it whenever the rule changes, or the experiment stops being about that paragraph. Both candidates are held to the floor invariants by `TestRuleInvariants`: a rule that tests less is cheaper, and that is the one way to improve the numbers that must never count as a win.
+
 ## Always run the control arm
 
 `arms/control.md` symlinks `AGENTS.md`, so the `control` arm injects **the same bytes as `magpie` under a different name**. Whatever distance it lands from baseline is that run's chance variation, and the summary prints it as a noise floor. Any effect narrower than that band is not evidence, whoever it flatters.
