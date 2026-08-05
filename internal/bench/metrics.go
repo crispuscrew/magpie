@@ -15,7 +15,24 @@ type Metrics struct {
 	Lines    int `json:"lines"`    // net new lines (go.sum excluded)
 	Deps     int `json:"deps"`     // new external module paths
 	Entities int `json:"entities"` // net new exported top-level names + new packages
+	// TestLines is the part of Lines that landed in _test.go files. The floor
+	// mandates a runnable check, and the rule forbids trading the floor away for
+	// a smaller number, so charging that check to the ladder measures the wrong
+	// thing. Nil marks a run recorded before the split, where Lines cannot be
+	// separated; do not report it as "wrote no tests".
+	TestLines *int `json:"test_lines,omitempty"`
 }
+
+// ImplLines is Lines minus the mandated check: the part the ladder is actually
+// asked to shrink. Falls back to Lines when a run predates the split.
+func (m Metrics) ImplLines() int {
+	if m.TestLines == nil {
+		return m.Lines
+	}
+	return m.Lines - *m.TestLines
+}
+
+func isTestFile(path string) bool { return strings.HasSuffix(path, "_test.go") }
 
 var (
 	modulePath = `[A-Za-z0-9.\-]+\.[A-Za-z]{2,}(?:/[\w.\-~]+)+`
@@ -72,6 +89,7 @@ func CollectMetrics(workdir string) (Metrics, error) {
 
 func measure(numstat, patch, baseGoMod string, baseFiles []string) Metrics {
 	var metrics Metrics
+	var testLines int
 	for _, line := range strings.Split(numstat, "\n") {
 		fields := strings.Fields(line)
 		if len(fields) != 3 || fields[2] == "go.sum" || fields[0] == "-" {
@@ -80,7 +98,11 @@ func measure(numstat, patch, baseGoMod string, baseFiles []string) Metrics {
 		added, _ := strconv.Atoi(fields[0])
 		deleted, _ := strconv.Atoi(fields[1])
 		metrics.Lines += added - deleted
+		if isTestFile(fields[2]) {
+			testLines += added - deleted
+		}
 	}
+	metrics.TestLines = &testLines
 
 	baseDeps := map[string]bool{}
 	for _, match := range goModDep.FindAllStringSubmatch(baseGoMod, -1) {
@@ -124,7 +146,7 @@ func measure(numstat, patch, baseGoMod string, baseFiles []string) Metrics {
 }
 
 func isSourceFile(path string) bool {
-	return strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, "_test.go")
+	return strings.HasSuffix(path, ".go") && !isTestFile(path)
 }
 
 func collectAdded(content, path string, baseDeps, deps, addedNames map[string]bool) {
