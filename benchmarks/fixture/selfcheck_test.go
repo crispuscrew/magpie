@@ -52,12 +52,15 @@ func TestSelfcheck(t *testing.T) {
 	if err != nil || count != 2 {
 		t.Fatalf("export: count=%d err=%v", count, err)
 	}
-	var notes []Note
+	// Not named "notes": several task prompts hand the agent a `notes` of their
+	// own (Stats returns one), and a collision here fails the build for any arm
+	// that adds its check nearby, which only ever penalises arms that write one.
+	var exported []Note
 	data, _ := os.ReadFile(outPath)
-	if err := json.Unmarshal(data, &notes); err != nil {
+	if err := json.Unmarshal(data, &exported); err != nil {
 		t.Fatal(err)
 	}
-	if notes[0].Title != "First note" {
-		t.Fatalf("export order/content wrong: %+v", notes[0])
+	if exported[0].Title != "First note" {
+		t.Fatalf("export order/content wrong: %+v", exported[0])
 	}
 }

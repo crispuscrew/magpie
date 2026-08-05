@@ -6,17 +6,22 @@ import (
 	"testing"
 )
 
+func intp(v int) *int { return &v }
+
 func TestSummarizeComparison(t *testing.T) {
 	rows := []Row{
 		{Task: "demo", Rung: "2", Arm: "baseline", Backend: "claude", Model: "sonnet",
-			Rep: 1, Metrics: Metrics{Lines: 100, Entities: 4}, Pass: true, DurationMs: 10000},
+			Rep: 1, Metrics: Metrics{Lines: 100, Entities: 4, TestLines: intp(0)}, Pass: true, DurationMs: 10000},
 		{Task: "demo", Rung: "2", Arm: "magpie", Backend: "claude", Model: "sonnet",
-			Rep: 1, Metrics: Metrics{Lines: 40, Deps: 1, Entities: 2}, Pass: true, DurationMs: 5000},
+			Rep: 1, Metrics: Metrics{Lines: 40, Deps: 1, Entities: 2, TestLines: intp(10)}, Pass: true, DurationMs: 5000},
 	}
 	summary := summarize(rows)
 	for _, want := range []string{
-		"| demo | -60% | +1 | -50% | -50% | 1/1 → 1/1 |",
-		"| **all tasks (summed)** | -60% | +1 | -50% | -50% | 1/1 → 1/1 |",
+		// impl 100→30 is the ladder's number; the composite -60% understates it
+		// because magpie's 10 test lines are charged to the same total.
+		"| demo | -70% | +10 | -60% | +1 | -50% | -50% | 0 | 1/1 → 1/1 |",
+		"| **all tasks (summed)** | -70% | +10 | -60% | +1 | -50% | -50% | 0 | 1/1 → 1/1 |",
+		"| demo | 2 | magpie | 1/1 | 40 | 30 | 10 | 1 | 2 | 5.0 |",
 		"# magpie bench — claude / sonnet",
 	} {
 		if !strings.Contains(summary, want) {
@@ -26,6 +31,24 @@ func TestSummarizeComparison(t *testing.T) {
 	// One task is not a median, however tempting the row looks.
 	if strings.Contains(summary, "all tasks (median)") {
 		t.Errorf("1-task run must not claim a median:\n%s", summary)
+	}
+}
+
+// Every arm at zero is a broken harness far more often than it is agents that
+// all wrote bad code, and the summary has to say so before anyone reads it.
+func TestSummarizeFlagsTotalCheckFailure(t *testing.T) {
+	rows := []Row{
+		{Task: "demo", Arm: "baseline", Backend: "claude", Model: "opus", Rep: 1,
+			Metrics: Metrics{Lines: 10, TestLines: intp(0)}, Pass: false},
+		{Task: "demo", Arm: "magpie", Backend: "claude", Model: "opus", Rep: 1,
+			Metrics: Metrics{Lines: 5, TestLines: intp(0)}, Pass: false},
+	}
+	if !strings.Contains(summarize(rows), "Nothing passed its check") {
+		t.Error("a run where nothing passed must be flagged as suspect harness")
+	}
+	rows[0].Pass = true
+	if strings.Contains(summarize(rows), "Nothing passed its check") {
+		t.Error("banner must not fire once anything passes")
 	}
 }
 
@@ -39,16 +62,16 @@ func TestSummarizeMedianRow(t *testing.T) {
 		task := fmt.Sprintf("t%d", i)
 		rows = append(rows,
 			Row{Task: task, Rung: "2", Arm: "baseline", Backend: "claude", Model: "sonnet",
-				Rep: 1, Metrics: Metrics{Lines: lines.base, Entities: 4}, Pass: true, DurationMs: 10000},
+				Rep: 1, Metrics: Metrics{Lines: lines.base, Entities: 4, TestLines: intp(10)}, Pass: true, DurationMs: 10000},
 			Row{Task: task, Rung: "2", Arm: "magpie", Backend: "claude", Model: "sonnet",
-				Rep: 1, Metrics: Metrics{Lines: lines.arm, Entities: 2}, Pass: true, DurationMs: 5000})
+				Rep: 1, Metrics: Metrics{Lines: lines.arm, Entities: 2, TestLines: intp(10)}, Pass: true, DurationMs: 5000})
 	}
 	summary := summarize(rows)
 	for _, want := range []string{
 		// The skew: one task carries the sum, the median ignores it.
-		"| **all tasks (summed)** | -67% | 0 | -50% | -50% | 5/5 → 5/5 |",
-		// Pins column order and the deps n/a, so a transposed or missing row fails.
-		"| **all tasks (median)** | -10% | n/a | -50% | -50% | 5/5 → 5/5 |",
+		"| **all tasks (summed)** | -70% | +0% | -67% | 0 | -50% | -50% | 0 | 5/5 → 5/5 |",
+		// Pins column order and the n/a cells, so a transposed or missing row fails.
+		"| **all tasks (median)** | -11% | +0% | -10% | n/a | -50% | -50% | n/a | 5/5 → 5/5 |",
 	} {
 		if !strings.Contains(summary, want) {
 			t.Errorf("summary missing %q:\n%s", want, summary)

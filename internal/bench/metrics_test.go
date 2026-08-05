@@ -43,13 +43,32 @@ func Connect() int { return 1 }
 	write(t, dir, "go.mod", "module demo\n\ngo 1.24\n\nrequire modernc.org/sqlite v1.34.5\n\nrequire github.com/foo/bar v1.0.0\n")
 	write(t, dir, "sub/helper.go", "package sub\n\nfunc Helper() int { return 0 }\n")
 	write(t, dir, "go.sum", "noise noise noise\n")
+	// A check counts toward lines but not toward impl, and TestSearch is not an
+	// entity: nobody calls a test.
+	write(t, dir, "store_test.go", "package demo\n\nfunc TestSearch(t *testing.T) {}\n")
 
 	metrics, err := CollectMetrics(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := Metrics{Lines: 15, Deps: 1, Entities: 4}
-	if metrics != want {
-		t.Fatalf("metrics = %+v, want %+v", metrics, want)
+	if metrics.Lines != 18 || metrics.Deps != 1 || metrics.Entities != 4 {
+		t.Fatalf("metrics = %+v, want lines 18, deps 1, entities 4", metrics)
+	}
+	if metrics.TestLines == nil {
+		t.Fatal("TestLines unset; nil is reserved for runs recorded before the split")
+	}
+	if *metrics.TestLines != 3 {
+		t.Errorf("TestLines = %d, want 3", *metrics.TestLines)
+	}
+	if metrics.ImplLines() != 15 {
+		t.Errorf("ImplLines = %d, want 15", metrics.ImplLines())
+	}
+}
+
+// A pre-split row has no test count, so impl must fall back to the total rather
+// than silently reporting the whole diff as implementation minus nothing.
+func TestImplLinesFallsBackWhenUnsplit(t *testing.T) {
+	if got := (Metrics{Lines: 42}).ImplLines(); got != 42 {
+		t.Errorf("ImplLines = %d, want 42", got)
 	}
 }
