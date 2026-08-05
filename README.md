@@ -14,22 +14,24 @@ Every pick is proven by a cost line — `cost: +N lines, +D deps, +E entities` �
 
 ## Measured
 
-Real agentic Claude Code sessions (opus), 12 tasks × 4 arms × 3 reps, medians, correctness-gated. Every arm runs the same bench — rule files in `benchmarks/arms/`, method and raw rows in [benchmarks/](benchmarks/).
+Real agentic Claude Code sessions (opus), 12 tasks × 4 arms × 3 reps, with correctness reported per run rather than assumed. Every arm runs the same bench: rule files in `benchmarks/arms/`, method and raw rows in [benchmarks/](benchmarks/).
 
-| arm | lines | entities | pass | floor kept |
-|---|--:|--:|--:|--:|
-| baseline (no rule) | — | — | 35/36 | 8/9 |
-| **magpie** | **−55%** | −38% | **36/36** | **9/9** |
-| ponytail | −45% | −43% | 33/36 | 8/9 |
-| caveman | −33% | −5% | 36/36 | 9/9 |
+| arm | lines (total) | lines (median task) | entities (total) | pass | floor kept |
+|---|--:|--:|--:|--:|--:|
+| baseline (no rule) | n/a | n/a | n/a | 35/36 | 8/9 |
+| **magpie** | **−55%** | **−28%** | −38% | **36/36** | **9/9** |
+| ponytail | −45% | −21% | −43% | 33/36 | 8/9 |
+| caveman | −33% | −11% | −5% | 36/36 | 9/9 |
 
-lines/entities = median change vs baseline across all tasks, wash cases included; floor kept = floor probes passed (validation under "optimize it", atomic write under "simplify it", SQL injection bait). Best magpie cases: speculative config system −73%, DB constraint over app code −100%. Where magpie costs more it says so: the one-liner task runs +18% lines because the floor demands a runnable check a bare agent skips.
+Every task is the median of its 3 reps, wash cases included. **total** sums those medians across all 12 tasks and compares the sums, so a big task counts for more; **median task** averages the two middle per-task percentages, so every task weighs the same. Both rows are in the generated tables. A task with no baseline for a metric has no percentage and drops out of the median, which is why entities by median task is ±0% for every arm: ten of the twelve tasks start at 0 or 1 entity, so the entity total rests on the two rung-1 tasks. floor kept = floor probes passed (validation under "optimize it", atomic write under "simplify it", SQL injection bait). Best magpie cases: speculative config system −73%, DB constraint over app code −100%. Where magpie costs more it says so: the one-liner task runs +18% lines because the floor demands a runnable check a bare agent skips.
+
+Two limits on this table, both since measured. These are **composite** lines, implementation plus the check the floor mandates, which is the only form this run supports; later runs report the two separately, and inspected diffs show the composite understates the ladder by charging it for the floor. And no control arm ran here, so the table carries no measured noise band: a control arm since finished 24 points from an arm running byte-identical text, so treat small gaps as unresolved rather than real. [benchmarks/](benchmarks/) has both.
 
 ## Install
 
 | Host | How |
 |---|---|
-| Claude Code | `/plugin marketplace add crispuscrew/magpie` then `/plugin install magpie@magpie` |
+| Claude Code | `/plugin marketplace add crispuscrew/magpie` then `/plugin install magpie@magpie` (installs `skills/magpie/SKILL.md`) |
 | Codex / Gemini CLI / Copilot CLI / Antigravity and other `AGENTS.md` readers | copy `AGENTS.md` to the repo root |
 | Cursor | copy `.cursor/rules/magpie.mdc` |
 | Windsurf | copy `.windsurf/rules/magpie.md` |
@@ -39,7 +41,7 @@ lines/entities = median change vs baseline across all tasks, wash cases included
 | `.agents/` workspace-rule hosts | copy `.agents/rules/magpie.md` |
 | anything else | paste `AGENTS.md` into the system prompt |
 
-All host files are generated from `AGENTS.md` (`make adapters`); CI fails on drift.
+Every host file, the Claude Code skill included, is generated from `AGENTS.md` (`make adapters`); CI fails on drift. One rule text ships everywhere, so what you install is what gets benchmarked.
 
 ## Skills
 
