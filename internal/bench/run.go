@@ -51,6 +51,7 @@ type Row struct {
 	Pass       bool
 	DurationMs int64
 	CostUSD    float64 `json:",omitempty"`
+	Tokens     Tokens  `json:"tokens,omitzero"`
 	CheckTail  string  `json:",omitempty"`
 	Error      string  `json:",omitempty"`
 }
@@ -162,7 +163,7 @@ func runOne(cfg Config, task Task, arm, rule string) Row {
 		row.Error = err.Error()
 		return row
 	}
-	row.DurationMs, row.CostUSD = outcome.DurationMs, outcome.CostUSD
+	row.DurationMs, row.CostUSD, row.Tokens = outcome.DurationMs, outcome.CostUSD, outcome.Tokens
 
 	metrics, err := CollectMetrics(workdir)
 	if err != nil {

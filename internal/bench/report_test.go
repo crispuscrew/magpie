@@ -19,8 +19,8 @@ func TestSummarizeComparison(t *testing.T) {
 	for _, want := range []string{
 		// impl 100→30 is the ladder's number; the composite -60% understates it
 		// because magpie's 10 test lines are charged to the same total.
-		"| demo | -70% | +10 | -60% | +1 | -50% | -50% | 0 | 1/1 → 1/1 |",
-		"| **all tasks (summed)** | -70% | +10 | -60% | +1 | -50% | -50% | 0 | 1/1 → 1/1 |",
+		"| demo | -70% | +10 | -60% | +1 | -50% | -50% | 0 | 0 | 1/1 → 1/1 |",
+		"| **all tasks (summed)** | -70% | +10 | -60% | +1 | -50% | -50% | 0 | 0 | 1/1 → 1/1 |",
 		// impl, test, lines: same order as the comparison table below it.
 		"| demo | 2 | magpie | 1/1 | 30 | 10 | 40 | 1 | 2 | 5.0 |",
 		"# magpie bench — claude / sonnet",
@@ -88,9 +88,9 @@ func TestSummarizeMedianRow(t *testing.T) {
 	summary := summarize(rows)
 	for _, want := range []string{
 		// The skew: one task carries the sum, the median ignores it.
-		"| **all tasks (summed)** | -70% | +0% | -67% | 0 | -50% | -50% | 0 | 5/5 → 5/5 |",
+		"| **all tasks (summed)** | -70% | +0% | -67% | 0 | -50% | -50% | 0 | 0 | 5/5 → 5/5 |",
 		// Pins column order and the n/a cells, so a transposed or missing row fails.
-		"| **all tasks (median)** | -11% | +0% | -10% | n/a | -50% | -50% | n/a | 5/5 → 5/5 |",
+		"| **all tasks (median)** | -11% | +0% | -10% | n/a | -50% | -50% | n/a | n/a | 5/5 → 5/5 |",
 	} {
 		if !strings.Contains(summary, want) {
 			t.Errorf("summary missing %q:\n%s", want, summary)

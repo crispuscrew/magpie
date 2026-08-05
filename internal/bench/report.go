@@ -12,17 +12,18 @@ import (
 )
 
 type cell struct {
-	rung                                              string
-	lines, impl, test, deps, entities, duration, cost []int
-	pass, total                                       int
+	rung                                                      string
+	lines, impl, test, deps, entities, duration, cost, tokens []int
+	pass, total                                               int
 }
 
 // cost is carried in whole cents so the one median helper serves every metric.
-type armMedians struct{ lines, impl, test, deps, entities, duration, cost int }
+type armMedians struct{ lines, impl, test, deps, entities, duration, cost, tokens int }
 
 func medians(entry *cell) armMedians {
 	return armMedians{median(entry.lines), median(entry.impl), median(entry.test),
-		median(entry.deps), median(entry.entities), median(entry.duration), median(entry.cost)}
+		median(entry.deps), median(entry.entities), median(entry.duration), median(entry.cost),
+		median(entry.tokens)}
 }
 
 func (m *armMedians) add(other armMedians) {
@@ -33,6 +34,7 @@ func (m *armMedians) add(other armMedians) {
 	m.entities += other.entities
 	m.duration += other.duration
 	m.cost += other.cost
+	m.tokens += other.tokens
 }
 
 // Resummarize renders the summary .md next to a results .jsonl and returns its path.
@@ -85,6 +87,7 @@ func summarize(rows []Row) string {
 		entry.entities = append(entry.entities, row.Entities)
 		entry.duration = append(entry.duration, int(row.DurationMs))
 		entry.cost = append(entry.cost, int(row.CostUSD*100))
+		entry.tokens = append(entry.tokens, row.Tokens.Total())
 		if row.TestLines != nil {
 			entry.test = append(entry.test, *row.TestLines)
 		} else {
@@ -142,7 +145,7 @@ func summarize(rows []Row) string {
 func writeComparison(builder *strings.Builder, arm string, tasks []string, cells map[string]*cell, split bool) {
 	var rows []string
 	var allBase, allArm armMedians
-	var dImpl, dTest, dLines, dDeps, dEntities, dSeconds, dCost []int
+	var dImpl, dTest, dLines, dDeps, dEntities, dSeconds, dCost, dTokens []int
 	var passBase, passArm, runsBase, runsArm int
 	for _, task := range tasks {
 		base, entry := cells[task+"|baseline"], cells[task+"|"+arm]
@@ -159,6 +162,7 @@ func writeComparison(builder *strings.Builder, arm string, tasks []string, cells
 		addDelta(&dEntities, baseMed.entities, armMed.entities)
 		addDelta(&dSeconds, baseMed.duration, armMed.duration)
 		addDelta(&dCost, baseMed.cost, armMed.cost)
+		addDelta(&dTokens, baseMed.tokens, armMed.tokens)
 		passBase += base.pass
 		passArm += entry.pass
 		runsBase += base.total
@@ -169,17 +173,18 @@ func writeComparison(builder *strings.Builder, arm string, tasks []string, cells
 		return
 	}
 	fmt.Fprintf(builder, "\n## %s vs baseline\n\n", arm)
-	builder.WriteString("| task | impl | test | lines | deps | entities | seconds | $ | pass |\n" +
-		"|---|--:|--:|--:|--:|--:|--:|--:|--:|\n")
+	builder.WriteString("| task | impl | test | lines | deps | entities | seconds | $ | tokens | pass |\n" +
+		"|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n")
 	builder.WriteString(strings.Join(rows, "\n") + "\n")
 	builder.WriteString(comparisonRow("**all tasks (summed)**", allBase, allArm, split,
 		passBase, runsBase, passArm, runsArm) + "\n")
 	// Below minMedianTasks a "median" is one or two tasks wearing a statistic's
 	// name, so the row is left out rather than published as noise.
 	if len(rows) >= minMedianTasks {
-		fmt.Fprintf(builder, "| **all tasks (median)** | %s | %s | %s | %s | %s | %s | %s | %d/%d → %d/%d |\n",
+		fmt.Fprintf(builder, "| **all tasks (median)** | %s | %s | %s | %s | %s | %s | %s | %s | %d/%d → %d/%d |\n",
 			splitCell(split, medianPct(dImpl)), splitCell(split, medianPct(dTest)),
-			medianPct(dLines), medianPct(dDeps), medianPct(dEntities), medianPct(dSeconds), medianPct(dCost),
+			medianPct(dLines), medianPct(dDeps), medianPct(dEntities), medianPct(dSeconds),
+			medianPct(dCost), medianPct(dTokens),
 			passBase, runsBase, passArm, runsArm)
 	}
 }
@@ -243,12 +248,12 @@ func medianPct(samples []int) string {
 }
 
 func comparisonRow(label string, base, arm armMedians, split bool, basePass, baseRuns, armPass, armRuns int) string {
-	return fmt.Sprintf("| %s | %s | %s | %s | %s | %s | %s | %s | %d/%d → %d/%d |",
+	return fmt.Sprintf("| %s | %s | %s | %s | %s | %s | %s | %s | %s | %d/%d → %d/%d |",
 		label,
 		splitCell(split, pct(base.impl, arm.impl)), splitCell(split, pct(base.test, arm.test)),
 		pct(base.lines, arm.lines), pct(base.deps, arm.deps),
 		pct(base.entities, arm.entities), pct(base.duration, arm.duration),
-		pct(base.cost, arm.cost),
+		pct(base.cost, arm.cost), pct(base.tokens, arm.tokens),
 		basePass, baseRuns, armPass, armRuns)
 }
 
