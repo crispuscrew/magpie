@@ -21,7 +21,8 @@ func TestSummarizeComparison(t *testing.T) {
 		// because magpie's 10 test lines are charged to the same total.
 		"| demo | -70% | +10 | -60% | +1 | -50% | -50% | 0 | 1/1 → 1/1 |",
 		"| **all tasks (summed)** | -70% | +10 | -60% | +1 | -50% | -50% | 0 | 1/1 → 1/1 |",
-		"| demo | 2 | magpie | 1/1 | 40 | 30 | 10 | 1 | 2 | 5.0 |",
+		// impl, test, lines: same order as the comparison table below it.
+		"| demo | 2 | magpie | 1/1 | 30 | 10 | 40 | 1 | 2 | 5.0 |",
 		"# magpie bench — claude / sonnet",
 	} {
 		if !strings.Contains(summary, want) {

@@ -104,16 +104,16 @@ func summarize(rows []Row) string {
 			"certainly a broken harness, not agents that all wrote bad code. Verify the check " +
 			"command before reading any number below.\n\n")
 	}
-	builder.WriteString("| task | rung | arm | pass | lines | impl | test | deps | entities | seconds |\n")
+	builder.WriteString("| task | rung | arm | pass | impl | test | lines | deps | entities | seconds |\n")
 	builder.WriteString("|---|---|---|--:|--:|--:|--:|--:|--:|--:|\n")
 	for _, task := range tasks {
 		for _, arm := range arms {
 			if entry := cells[task+"|"+arm]; entry != nil {
 				med := medians(entry)
-				fmt.Fprintf(&builder, "| %s | %s | %s | %d/%d | %d | %s | %s | %d | %d | %.1f |\n",
-					task, entry.rung, arm, entry.pass, entry.total, med.lines,
+				fmt.Fprintf(&builder, "| %s | %s | %s | %d/%d | %s | %s | %d | %d | %d | %.1f |\n",
+					task, entry.rung, arm, entry.pass, entry.total,
 					splitCell(split, strconv.Itoa(med.impl)), splitCell(split, strconv.Itoa(med.test)),
-					med.deps, med.entities, float64(med.duration)/1000)
+					med.lines, med.deps, med.entities, float64(med.duration)/1000)
 			}
 		}
 	}
@@ -205,8 +205,8 @@ func noiseFloor(tasks []string, cells map[string]*cell, split bool) string {
 	}
 	return fmt.Sprintf("\n**Noise floor.** `%s` injects the same rule text as `magpie` under another "+
 		"name, so its distance from baseline is this run's chance variation, not an effect: impl %s, "+
-		"lines %s. Read every other arm against that band. Two identical rules have landed 24 points "+
-		"apart on impl at one repetition, so a gap narrower than the control's is not evidence.\n",
+		"lines %s. Read every other arm against that band; a gap narrower than the control's own is "+
+		"not evidence, whichever arm it favours.\n",
 		controlArm, splitCell(split, pct(base.impl, ctl.impl)), pct(base.lines, ctl.lines))
 }
 

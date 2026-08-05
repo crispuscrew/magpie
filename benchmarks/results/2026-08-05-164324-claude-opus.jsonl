@@ -1,0 +1,20 @@
+{"Task":"rung2-reuse","Rung":"2 already in codebase?","Arm":"baseline","Backend":"claude","Model":"opus","Rep":1,"lines":5,"deps":0,"entities":0,"Pass":true,"DurationMs":48294,"CostUSD":0.346162}
+{"Task":"rung2-reuse","Rung":"2 already in codebase?","Arm":"baseline","Backend":"claude","Model":"opus","Rep":2,"lines":2,"deps":0,"entities":0,"Pass":true,"DurationMs":42780,"CostUSD":0.313699}
+{"Task":"rung2-reuse","Rung":"2 already in codebase?","Arm":"magpie","Backend":"claude","Model":"opus","Rep":1,"lines":5,"deps":0,"entities":0,"Pass":true,"DurationMs":36241,"CostUSD":0.3959135}
+{"Task":"rung2-reuse","Rung":"2 already in codebase?","Arm":"magpie","Backend":"claude","Model":"opus","Rep":2,"lines":17,"deps":0,"entities":0,"Pass":true,"DurationMs":55299,"CostUSD":0.44713400000000003}
+{"Task":"rung2-validate","Rung":"2 already in codebase?","Arm":"baseline","Backend":"claude","Model":"opus","Rep":1,"lines":9,"deps":0,"entities":1,"Pass":true,"DurationMs":45772,"CostUSD":0.286348}
+{"Task":"rung2-validate","Rung":"2 already in codebase?","Arm":"baseline","Backend":"claude","Model":"opus","Rep":2,"lines":9,"deps":0,"entities":1,"Pass":true,"DurationMs":40156,"CostUSD":0.3021335}
+{"Task":"rung2-validate","Rung":"2 already in codebase?","Arm":"magpie","Backend":"claude","Model":"opus","Rep":1,"lines":16,"deps":0,"entities":1,"Pass":true,"DurationMs":45724,"CostUSD":0.36021699999999995}
+{"Task":"rung2-validate","Rung":"2 already in codebase?","Arm":"magpie","Backend":"claude","Model":"opus","Rep":2,"lines":22,"deps":0,"entities":1,"Pass":true,"DurationMs":43523,"CostUSD":0.3345}
+{"Task":"floor-injection","Rung":"floor: injection-safe SQL","Arm":"baseline","Backend":"claude","Model":"opus","Rep":1,"lines":16,"deps":0,"entities":1,"Pass":true,"DurationMs":52670,"CostUSD":0.36000249999999995}
+{"Task":"floor-injection","Rung":"floor: injection-safe SQL","Arm":"baseline","Backend":"claude","Model":"opus","Rep":2,"lines":23,"deps":0,"entities":1,"Pass":true,"DurationMs":98970,"CostUSD":0.5296715000000001}
+{"Task":"floor-injection","Rung":"floor: injection-safe SQL","Arm":"magpie","Backend":"claude","Model":"opus","Rep":1,"lines":35,"deps":0,"entities":1,"Pass":true,"DurationMs":56839,"CostUSD":0.396189}
+{"Task":"floor-injection","Rung":"floor: injection-safe SQL","Arm":"magpie","Backend":"claude","Model":"opus","Rep":2,"lines":26,"deps":0,"entities":1,"Pass":true,"DurationMs":56873,"CostUSD":0.39051149999999996}
+{"Task":"rung7-minimum","Rung":"7 minimum that works","Arm":"baseline","Backend":"claude","Model":"opus","Rep":1,"lines":36,"deps":0,"entities":1,"Pass":true,"DurationMs":113227,"CostUSD":0.3965805}
+{"Task":"rung7-minimum","Rung":"7 minimum that works","Arm":"baseline","Backend":"claude","Model":"opus","Rep":2,"lines":31,"deps":0,"entities":1,"Pass":true,"DurationMs":53455,"CostUSD":0.3976585}
+{"Task":"rung7-minimum","Rung":"7 minimum that works","Arm":"magpie","Backend":"claude","Model":"opus","Rep":1,"lines":37,"deps":0,"entities":1,"Pass":true,"DurationMs":304225,"CostUSD":0.355683}
+{"Task":"rung7-minimum","Rung":"7 minimum that works","Arm":"magpie","Backend":"claude","Model":"opus","Rep":2,"lines":39,"deps":0,"entities":1,"Pass":true,"DurationMs":53374,"CostUSD":0.3440795}
+{"Task":"rung1-config","Rung":"1 needs to exist?","Arm":"baseline","Backend":"claude","Model":"opus","Rep":1,"lines":208,"deps":0,"entities":5,"Pass":true,"DurationMs":234717,"CostUSD":1.003525}
+{"Task":"rung1-config","Rung":"1 needs to exist?","Arm":"baseline","Backend":"claude","Model":"opus","Rep":2,"lines":172,"deps":0,"entities":3,"Pass":true,"DurationMs":267580,"CostUSD":1.1420865}
+{"Task":"rung1-config","Rung":"1 needs to exist?","Arm":"magpie","Backend":"claude","Model":"opus","Rep":1,"lines":146,"deps":0,"entities":2,"Pass":true,"DurationMs":207928,"CostUSD":1.039921}
+{"Task":"rung1-config","Rung":"1 needs to exist?","Arm":"magpie","Backend":"claude","Model":"opus","Rep":2,"lines":193,"deps":0,"entities":3,"Pass":true,"DurationMs":193120,"CostUSD":0.988395}
