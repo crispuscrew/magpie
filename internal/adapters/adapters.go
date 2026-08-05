@@ -22,6 +22,18 @@ inclusion: always
 ---
 `
 
+const skillFront = `---
+name: magpie
+description: >
+  Reuse before you write: existing code, stdlib, native features, installed
+  deps, one line before fifty, proven by a cost line. Use on ANY coding
+  task, and when the user says "magpie", "reuse", "yagni", "do less", or
+  complains about over-engineering, bloat, or unnecessary dependencies.
+  Not for non-coding requests.
+license: Apache-2.0
+---
+`
+
 // Files maps each adapter path to its host frontmatter ("" = plain copy).
 var Files = map[string]string{
 	".cursor/rules/magpie.mdc":        cursorFront,
@@ -30,6 +42,9 @@ var Files = map[string]string{
 	".github/copilot-instructions.md": "",
 	".kiro/steering/magpie.md":        kiroFront,
 	".agents/rules/magpie.md":         "",
+	// The Claude Code skill is generated too, so what the plugin installs is
+	// the rule that gets benchmarked, not a hand-kept second copy of it.
+	"skills/magpie/SKILL.md": skillFront,
 }
 
 // canonicalBody strips the repo-internal note; a missing marker errors so a
