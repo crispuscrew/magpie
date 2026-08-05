@@ -5,6 +5,23 @@ import (
 	"testing"
 )
 
+// The control arm only measures noise if it injects exactly what magpie does.
+// A stale copy here would quietly turn the noise floor into a second effect.
+func TestControlArmMatchesTheRule(t *testing.T) {
+	cfg := Config{ArmsDir: "../../benchmarks/arms", RulePath: "../../AGENTS.md"}
+	control, err := armRuleText(cfg, controlArm)
+	if err != nil {
+		t.Fatalf("control arm: %v", err)
+	}
+	rule, err := armRuleText(cfg, "magpie")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if control != rule {
+		t.Error("control arm text differs from the magpie arm; it no longer measures noise")
+	}
+}
+
 // A check command that cannot pass the untouched fixture scores every run a
 // failure. That once cost a full paid matrix, so it must abort before the first
 // agent session rather than after the last one.

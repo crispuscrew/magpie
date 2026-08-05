@@ -122,6 +122,7 @@ func summarize(rows []Row) string {
 			writeComparison(&builder, arm, tasks, cells, split)
 		}
 	}
+	builder.WriteString(noiseFloor(tasks, cells, split))
 	builder.WriteString("\n**impl** is the ladder's target: net new lines outside `_test.go`. **test** is " +
 		"the floor's mandated check, reported beside it rather than charged to the ladder, because the " +
 		"rule forbids trading the floor for a smaller number. **lines** is impl+test, the composite this " +
@@ -182,6 +183,35 @@ func writeComparison(builder *strings.Builder, arm string, tasks []string, cells
 			passBase, runsBase, passArm, runsArm)
 	}
 }
+
+// noiseFloor reports how far the control arm drifted from baseline. control
+// injects the same bytes as magpie, so whatever it scores is chance alone, and
+// a magpie effect smaller than that cannot be told apart from chance. Empty
+// when the run had no control arm.
+func noiseFloor(tasks []string, cells map[string]*cell, split bool) string {
+	var base, ctl armMedians
+	var paired bool
+	for _, task := range tasks {
+		baseCell, ctlCell := cells[task+"|baseline"], cells[task+"|"+controlArm]
+		if baseCell == nil || ctlCell == nil {
+			continue
+		}
+		paired = true
+		base.add(medians(baseCell))
+		ctl.add(medians(ctlCell))
+	}
+	if !paired {
+		return ""
+	}
+	return fmt.Sprintf("\n**Noise floor.** `%s` injects the same rule text as `magpie` under another "+
+		"name, so its distance from baseline is this run's chance variation, not an effect: impl %s, "+
+		"lines %s. Read every other arm against that band. Two identical rules have landed 24 points "+
+		"apart on impl at one repetition, so a gap narrower than the control's is not evidence.\n",
+		controlArm, splitCell(split, pct(base.impl, ctl.impl)), pct(base.lines, ctl.lines))
+}
+
+// controlArm is the reserved arm name for the same-rule-different-name control.
+const controlArm = "control"
 
 // splitCell renders a metric that only exists once impl and test are separated.
 func splitCell(split bool, text string) string {
