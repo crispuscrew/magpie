@@ -194,25 +194,31 @@ func writeComparison(builder *strings.Builder, arm string, tasks []string, cells
 // a magpie effect smaller than that cannot be told apart from chance. Empty
 // when the run had no control arm.
 func noiseFloor(tasks []string, cells map[string]*cell, split bool) string {
-	var base, ctl armMedians
+	var magpie, ctl armMedians
+	var testGap int
 	var paired bool
 	for _, task := range tasks {
-		baseCell, ctlCell := cells[task+"|baseline"], cells[task+"|"+controlArm]
-		if baseCell == nil || ctlCell == nil {
+		magpieCell, ctlCell := cells[task+"|magpie"], cells[task+"|"+controlArm]
+		if magpieCell == nil || ctlCell == nil {
 			continue
 		}
 		paired = true
-		base.add(medians(baseCell))
-		ctl.add(medians(ctlCell))
+		magpieMed, ctlMed := medians(magpieCell), medians(ctlCell)
+		magpie.add(magpieMed)
+		ctl.add(ctlMed)
+		testGap += abs(ctlMed.test - magpieMed.test)
 	}
 	if !paired {
 		return ""
 	}
-	return fmt.Sprintf("\n**Noise floor.** `%s` injects the same rule text as `magpie` under another "+
-		"name, so its distance from baseline is this run's chance variation, not an effect: impl %s, "+
-		"lines %s. Read every other arm against that band; a gap narrower than the control's own is "+
-		"not evidence, whichever arm it favours.\n",
-		controlArm, splitCell(split, pct(base.impl, ctl.impl)), pct(base.lines, ctl.lines))
+	// Against magpie, not against baseline: control runs the same text, so its
+	// distance from baseline is a second reading of the effect. Only the gap
+	// between the two is chance.
+	return fmt.Sprintf("\n**Noise floor.** `%s` and `magpie` inject the same rule text, so every gap "+
+		"between them is chance. They landed %s apart on summed impl and %d lines apart on test, "+
+		"summing each task's absolute difference. Impl is the metric worth ranking arms on; a test-line "+
+		"gap under that many lines is not a finding.\n",
+		controlArm, splitCell(split, pct(magpie.impl, ctl.impl)), testGap)
 }
 
 // controlArm is the reserved arm name for the same-rule-different-name control.
@@ -304,4 +310,11 @@ func median(values []int) int {
 	// Even count: average the two middles, so an even number of tasks or reps
 	// does not silently report the upper one as the median.
 	return int(math.Round(float64(sorted[mid-1]+sorted[mid]) / 2))
+}
+
+func abs(v int) int {
+	if v < 0 {
+		return -v
+	}
+	return v
 }
