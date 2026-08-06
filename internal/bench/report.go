@@ -126,7 +126,7 @@ func summarize(rows []Row) string {
 		}
 	}
 	builder.WriteString(checkCoverage(tasks, arms, cells, split))
-	builder.WriteString(noiseFloor(tasks, cells, split))
+	builder.WriteString(noiseFloor(tasks, arms, cells, split))
 	builder.WriteString("\n**impl** is the ladder's target: net new lines outside `_test.go`. **test** is " +
 		"the floor's mandated check, reported beside it rather than charged to the ladder, because the " +
 		"rule forbids trading the floor for a smaller number. **lines** is impl+test, the composite this " +
@@ -223,32 +223,42 @@ func checkCoverage(tasks, arms []string, cells map[string]*cell, split bool) str
 // injects the same bytes as magpie, so whatever it scores is chance alone, and
 // a magpie effect smaller than that cannot be told apart from chance. Empty
 // when the run had no control arm.
-func noiseFloor(tasks []string, cells map[string]*cell, split bool) string {
-	var magpie, ctl armMedians
-	var testGap int
-	var paired bool
-	for _, task := range tasks {
-		magpieCell, ctlCell := cells[task+"|magpie"], cells[task+"|"+controlArm]
-		if magpieCell == nil || ctlCell == nil {
+func noiseFloor(tasks, arms []string, cells map[string]*cell, split bool) string {
+	var pairs []string
+	for _, arm := range arms {
+		if !strings.HasPrefix(arm, controlArm) {
 			continue
 		}
-		paired = true
-		magpieMed, ctlMed := medians(magpieCell), medians(ctlCell)
-		magpie.add(magpieMed)
-		ctl.add(ctlMed)
-		testGap += abs(ctlMed.test - magpieMed.test)
+		var magpie, ctl armMedians
+		var testGap int
+		var paired bool
+		for _, task := range tasks {
+			magpieCell, ctlCell := cells[task+"|magpie"], cells[task+"|"+arm]
+			if magpieCell == nil || ctlCell == nil {
+				continue
+			}
+			paired = true
+			magpieMed, ctlMed := medians(magpieCell), medians(ctlCell)
+			magpie.add(magpieMed)
+			ctl.add(ctlMed)
+			testGap += abs(ctlMed.test - magpieMed.test)
+		}
+		if paired {
+			pairs = append(pairs, fmt.Sprintf("`%s` landed %s from `magpie` on summed impl and %d "+
+				"lines on test", arm, splitCell(split, pct(magpie.impl, ctl.impl)), testGap))
+		}
 	}
-	if !paired {
+	if len(pairs) == 0 {
 		return ""
 	}
-	// Against magpie, not against baseline: control runs the same text, so its
+	// Against magpie, not against baseline: a control runs the same text, so its
 	// distance from baseline is a second reading of the effect. Only the gap
-	// between the two is chance.
-	return fmt.Sprintf("\n**Noise floor.** `%s` and `magpie` inject the same rule text, so every gap "+
-		"between them is chance. They landed %s apart on summed impl and %d lines apart on test, "+
-		"summing each task's absolute difference. Impl is the metric worth ranking arms on; a test-line "+
-		"gap under that many lines is not a finding.\n",
-		controlArm, splitCell(split, pct(magpie.impl, ctl.impl)), testGap)
+	// between identical rules is chance. More than one control turns that from a
+	// single point into a range.
+	return fmt.Sprintf("\n**Noise floor.** Every `%s*` arm injects the same rule text as `magpie`, so "+
+		"each gap here is chance rather than effect: %s. Impl is the metric worth ranking arms on, and "+
+		"a gap narrower than these is not a finding, whichever arm it favours.\n",
+		controlArm, strings.Join(pairs, "; "))
 }
 
 // controlArm is the reserved arm name for the same-rule-different-name control.
