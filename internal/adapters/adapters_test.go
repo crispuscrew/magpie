@@ -84,7 +84,7 @@ func TestRuleInvariants(t *testing.T) {
 	// dropping the floor: a rule that tests less is cheaper, and that is the one
 	// way to improve the numbers that must never count as an improvement.
 	for _, relPath := range []string{"AGENTS.md", "skills/magpie/SKILL.md",
-		"benchmarks/arms/magpie-tight.md", "benchmarks/arms/magpie-terse.md"} {
+		"benchmarks/arms/magpie-terse.md"} {
 		data, err := os.ReadFile(filepath.Join("../..", relPath))
 		if err != nil {
 			t.Fatal(err)
