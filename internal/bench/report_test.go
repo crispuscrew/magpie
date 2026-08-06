@@ -47,8 +47,9 @@ func TestNoiseFloorReportedOnlyWithControl(t *testing.T) {
 	}
 	rows = append(rows, Row{Task: "demo", Arm: controlArm, Backend: "claude", Model: "opus", Rep: 1,
 		Metrics: Metrics{Lines: 80, TestLines: intp(0)}, Pass: true})
-	// control drifted 100→80 on identical text, so the floor is 20%.
-	if got := summarize(rows); !strings.Contains(got, "impl -20%, lines -20%") {
+	// control 80 against magpie 50 on identical text: +60% apart, and the floor
+	// is measured against magpie, not against baseline.
+	if got := summarize(rows); !strings.Contains(got, "landed +60% apart on summed impl") {
 		t.Errorf("noise floor missing or wrong:\n%s", got)
 	}
 }
