@@ -125,6 +125,7 @@ func summarize(rows []Row) string {
 			writeComparison(&builder, arm, tasks, cells, split)
 		}
 	}
+	builder.WriteString(checkCoverage(tasks, arms, cells, split))
 	builder.WriteString(noiseFloor(tasks, cells, split))
 	builder.WriteString("\n**impl** is the ladder's target: net new lines outside `_test.go`. **test** is " +
 		"the floor's mandated check, reported beside it rather than charged to the ladder, because the " +
@@ -187,6 +188,35 @@ func writeComparison(builder *strings.Builder, arm string, tasks []string, cells
 			medianPct(dCost), medianPct(dTokens),
 			passBase, runsBase, passArm, runsArm)
 	}
+}
+
+// checkCoverage counts the tasks on which each arm left a runnable check. The
+// floor mandates one and no task verifies it, so the cheapest way to win this
+// bench is to test less. That has to be visible in the artifact rather than
+// depending on someone thinking to inspect diffs by hand.
+func checkCoverage(tasks, arms []string, cells map[string]*cell, split bool) string {
+	if !split {
+		return ""
+	}
+	var builder strings.Builder
+	builder.WriteString("\n**Checks left behind.** The floor mandates one runnable check and no task " +
+		"verifies it, so an arm can shrink its numbers by testing less. Tasks where the arm left any " +
+		"test line at all:\n\n")
+	for _, arm := range arms {
+		kept, total := 0, 0
+		for _, task := range tasks {
+			entry := cells[task+"|"+arm]
+			if entry == nil {
+				continue
+			}
+			total++
+			if medians(entry).test > 0 {
+				kept++
+			}
+		}
+		fmt.Fprintf(&builder, "- `%s` %d/%d\n", arm, kept, total)
+	}
+	return builder.String()
 }
 
 // noiseFloor reports how far the control arm drifted from baseline. control

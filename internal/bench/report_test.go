@@ -147,3 +147,24 @@ func TestPct(t *testing.T) {
 		}
 	}
 }
+
+// The cheapest way to win this bench is to stop writing checks, so coverage has
+// to be in the artifact rather than depend on someone inspecting diffs by hand.
+func TestCheckCoverageReported(t *testing.T) {
+	rows := []Row{
+		{Task: "a", Arm: "baseline", Rep: 1, Backend: "c", Model: "o", Pass: true,
+			Metrics: Metrics{Lines: 10, TestLines: intp(0)}},
+		{Task: "a", Arm: "magpie", Rep: 1, Backend: "c", Model: "o", Pass: true,
+			Metrics: Metrics{Lines: 10, TestLines: intp(4)}},
+		{Task: "b", Arm: "baseline", Rep: 1, Backend: "c", Model: "o", Pass: true,
+			Metrics: Metrics{Lines: 10, TestLines: intp(0)}},
+		{Task: "b", Arm: "magpie", Rep: 1, Backend: "c", Model: "o", Pass: true,
+			Metrics: Metrics{Lines: 10, TestLines: intp(0)}},
+	}
+	got := summarize(rows)
+	for _, want := range []string{"- `baseline` 0/2", "- `magpie` 1/2"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("coverage missing %q:\n%s", want, got)
+		}
+	}
+}
