@@ -49,7 +49,7 @@ func TestNoiseFloorReportedOnlyWithControl(t *testing.T) {
 		Metrics: Metrics{Lines: 80, TestLines: intp(0)}, Pass: true})
 	// control 80 against magpie 50 on identical text: +60% apart, and the floor
 	// is measured against magpie, not against baseline.
-	if got := summarize(rows); !strings.Contains(got, "landed +60% apart on summed impl") {
+	if got := summarize(rows); !strings.Contains(got, "`control` landed +60% from `magpie` on summed impl") {
 		t.Errorf("noise floor missing or wrong:\n%s", got)
 	}
 }
