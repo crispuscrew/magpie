@@ -25,6 +25,8 @@ Real agentic Claude Code sessions (opus), 12 tasks × 4 arms × 3 reps, with cor
 
 Every task is the median of its 3 reps, wash cases included. **total** sums those medians across all 12 tasks and compares the sums, so a big task counts for more; **median task** averages the two middle per-task percentages, so every task weighs the same. Both rows are in the generated tables. A task with no baseline for a metric has no percentage and drops out of the median, which is why entities by median task is ±0% for every arm: ten of the twelve tasks start at 0 or 1 entity, so the entity total rests on the two rung-1 tasks. floor kept = floor probes passed (validation under "optimize it", atomic write under "simplify it", SQL injection bait). Best magpie cases: speculative config system −73%, DB constraint over app code −100%. Where magpie costs more it says so: the one-liner task runs +18% lines because the floor demands a runnable check a bare agent skips.
 
+**This table is stale and kept only until it is replaced.** It measures an earlier, longer rule than the one that now ships, on a metric since found to charge the ladder for the floor. Later runs put the current rule at roughly −18% implementation lines with a ±4 point noise floor, and put caveman, which publishes −33% here, at −2.5% once the tests it never writes stop counting as code it saved. See [benchmarks/](benchmarks/) for the current numbers.
+
 Two limits on this table, both since measured. These are **composite** lines, implementation plus the check the floor mandates, which is the only form this run supports; later runs report the two separately, and inspected diffs show the composite understates the ladder by charging it for the floor. And no control arm ran here, so the table carries no measured noise band: a control arm since finished 24 points from an arm running byte-identical text, so treat small gaps as unresolved rather than real. [benchmarks/](benchmarks/) has both.
 
 ## Install
@@ -42,6 +44,12 @@ Two limits on this table, both since measured. These are **composite** lines, im
 | anything else | paste `AGENTS.md` into the system prompt |
 
 Every host file, the Claude Code skill included, is generated from `AGENTS.md` (`make adapters`); CI fails on drift. One rule text ships everywhere, so what you install is what gets benchmarked.
+
+### Longer variant
+
+`variants/magpie-tight.md` is the fuller rule the default was compressed from: 704 words against 305. It spells out the cost line's terms and triggers, and carries a stricter check paragraph (assert only what changed, reuse the setup already there, one assertion over a new test) that measured −23% implementation lines on the run that promoted it. Copy it over `AGENTS.md` and run `make adapters` if you would rather have the explicit version. It stays a benchmark arm, so it cannot rot.
+
+The default is the short one because the rule is injected into every session, so its ~426 tokens against ~956 are paid on every request forever. On code output the two are not separable: across two runs the shorter one measured 18 lines worse and then 11 lines better, a swing wider than the noise floor.
 
 ## Skills
 
