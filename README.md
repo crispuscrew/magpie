@@ -16,16 +16,16 @@ Every pick is proven by a cost line — `cost: +N lines, +D deps, +E entities` �
 
 Real agentic Claude Code sessions (opus, August 2026), 12 tasks x 8 arms x 4 reps, correctness reported per run rather than assumed. Every arm runs the same bench: rule files in `benchmarks/arms/`, method and raw rows in [benchmarks/](benchmarks/).
 
-| arm | impl lines | checks left | pass | floor kept | cost | output tokens |
-|---|--:|--:|--:|--:|--:|--:|
-| baseline (no rule) | 323 | 8/12 | 48/48 | 12/12 | | |
-| **magpie** | **−22%** | **11/12** | 46/48 | **12/12** | **−15%** | **−23%** |
-| ponytail | −15% | 10/12 | 48/48 | 12/12 | −3% | −6% |
-| caveman | −2% | 7/12 | 48/48 | 12/12 | −5% | −18% |
+Correctness first, because the rest only means something on top of it: **every arm kept all 12 floor probes**, the prompts that invite dropping validation, atomic writes or parameterised SQL. Every arm passed 46 to 48 of its 48 runs, a spread four byte-identical rules also produced, so correctness gates this table rather than ranking it.
+
+| arm | impl lines | checks left | cost | output tokens |
+|---|--:|--:|--:|--:|
+| baseline (no rule) | 323 | 8/12 | | |
+| **magpie** | **−22%** | **11/12** | **−15%** | **−23%** |
+| ponytail | −15% | 10/12 | −3% | −6% |
+| caveman | −2% | 7/12 | −5% | −18% |
 
 **impl** is net new lines outside `_test.go`: the code the ladder is there to shrink. The check the floor mandates is counted separately, because a rule that stops testing is not a rule that got leaner. **checks left** is the tasks where the arm left any runnable check at all, which is what stops "wrote less code" from being scored as a win when it means "wrote no test".
-
-**pass does not separate these arms.** Four arms running byte-identical rule text scored 46, 47, 48 and 48 out of 48 in this run, so magpie's 46 sits inside the spread of a rule competing with itself. Four of the five failures across all 384 sessions were the same task, `rung1-config`, the hardest one. Floor probes are the correctness result that does separate arms, and every arm kept 12/12.
 
 Three readings, in order of how much they should change your mind:
 
