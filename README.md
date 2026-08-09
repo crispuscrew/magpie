@@ -5,8 +5,6 @@
 **An always-on rule that makes AI coding agents build with what already exists.** Stop at the first rung that holds, prove the pick with a cost line, never simplify away the floor.
 
 > **−22% implementation code** · **−14% cost** per session · **−11% tokens**, output down 23%
->
-> On these tasks that is about $0.07 a session, and checks still land on 11 of 12. The rule itself costs 426 tokens.
 
 1. Needs to exist at all? → skip it (YAGNI)
 2. Already in this codebase? → reuse it
