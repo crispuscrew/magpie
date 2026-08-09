@@ -14,20 +14,28 @@ Every pick is proven by a cost line — `cost: +N lines, +D deps, +E entities` �
 
 ## Measured
 
-Real agentic Claude Code sessions (opus), 12 tasks × 4 arms × 3 reps, with correctness reported per run rather than assumed. Every arm runs the same bench: rule files in `benchmarks/arms/`, method and raw rows in [benchmarks/](benchmarks/).
+Real agentic Claude Code sessions (opus, August 2026), 12 tasks x 8 arms x 4 reps, correctness reported per run rather than assumed. Every arm runs the same bench: rule files in `benchmarks/arms/`, method and raw rows in [benchmarks/](benchmarks/).
 
-| arm | lines (total) | lines (median task) | entities (total) | pass | floor kept |
-|---|--:|--:|--:|--:|--:|
-| baseline (no rule) | n/a | n/a | n/a | 35/36 | 8/9 |
-| **magpie** | **−55%** | **−28%** | −38% | **36/36** | **9/9** |
-| ponytail | −45% | −21% | −43% | 33/36 | 8/9 |
-| caveman | −33% | −11% | −5% | 36/36 | 9/9 |
+| arm | impl lines | checks left | pass | floor kept | cost | output tokens |
+|---|--:|--:|--:|--:|--:|--:|
+| baseline (no rule) | 323 | 8/12 | 48/48 | 12/12 | | |
+| **magpie** | **−22%** | **11/12** | 46/48 | **12/12** | **−15%** | **−23%** |
+| ponytail | −15% | 10/12 | 48/48 | 12/12 | −3% | −6% |
+| caveman | −2% | 7/12 | 48/48 | 12/12 | −5% | −18% |
 
-Every task is the median of its 3 reps, wash cases included. **total** sums those medians across all 12 tasks and compares the sums, so a big task counts for more; **median task** averages the two middle per-task percentages, so every task weighs the same. Both rows are in the generated tables. A task with no baseline for a metric has no percentage and drops out of the median, which is why entities by median task is ±0% for every arm: ten of the twelve tasks start at 0 or 1 entity, so the entity total rests on the two rung-1 tasks. floor kept = floor probes passed (validation under "optimize it", atomic write under "simplify it", SQL injection bait). Best magpie cases: speculative config system −73%, DB constraint over app code −100%. Where magpie costs more it says so: the one-liner task runs +18% lines because the floor demands a runnable check a bare agent skips.
+**impl** is net new lines outside `_test.go`: the code the ladder is there to shrink. The check the floor mandates is counted separately, because a rule that stops testing is not a rule that got leaner. **checks left** is the tasks where the arm left any runnable check at all, which is what stops "wrote less code" from being scored as a win when it means "wrote no test".
 
-**This table is stale and kept only until it is replaced.** It measures an earlier, longer rule than the one that now ships, on a metric since found to charge the ladder for the floor. Later runs put the current rule at roughly −18% implementation lines with a ±4 point noise floor, and put caveman, which publishes −33% here, at −2.5% once the tests it never writes stop counting as code it saved. See [benchmarks/](benchmarks/) for the current numbers.
+Three readings, in order of how much they should change your mind:
 
-Two limits on this table, both since measured. These are **composite** lines, implementation plus the check the floor mandates, which is the only form this run supports; later runs report the two separately, and inspected diffs show the composite understates the ladder by charging it for the floor. And no control arm ran here, so the table carries no measured noise band: a control arm since finished 24 points from an arm running byte-identical text, so treat small gaps as unresolved rather than real. [benchmarks/](benchmarks/) has both.
+**Caveman does not reduce implementation code.** It publishes far better on a naive line count, and that count was tests it never writes. Measured twice, at −2.5% and −1.3%, while leaving a check on fewer tasks than using no rule at all. Reuse discipline and terseness are different things.
+
+**Magpie and ponytail are not separable here.** Magpie is nominally ahead on impl and clearly ahead on cost, but three runs have failed to put the gap outside the noise. At 12 tasks this bench cannot tell them apart, and saying so is more useful than a ranking it cannot support.
+
+**The rule pays for itself in tokens.** It costs ~426 tokens injected per session and returns roughly 12,000, which is why cost falls even though the agent is being asked to think about a ladder first.
+
+### What the numbers cannot carry
+
+Four arms in that run injected byte-identical rule text under different names. They landed 13 impl lines apart, **4 points**, which is this bench's error bar; anything narrower is not a result. Between runs it is worse: the same two rules swapped places by 29 lines across two nights, so a single run's ranking of close arms is not reliable, however many repetitions it has. One fixture, one language, twelve tasks. `make bench` reruns all of it.
 
 ## Install
 
@@ -57,7 +65,7 @@ The default is the short one because the rule is injected into every session, so
 
 ## Verify the numbers
 
-`make bench` reruns everything: 12 tasks (one or two per rung + three floor probes) against a real Go fixture, any arm vs baseline, every check proven passable by a committed reference solution — `benchmarks/README.md`.
+`make bench` reruns everything: 12 tasks (one or two per rung + three floor probes) against a real Go fixture, any arm vs baseline, every check proven passable by a committed reference solution. Always include the `control` arm, which injects the shipped rule under a second name so the run measures its own error bar. See `benchmarks/README.md`.
 
 ## Develop
 
