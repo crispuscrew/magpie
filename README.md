@@ -25,6 +25,8 @@ Real agentic Claude Code sessions (opus, August 2026), 12 tasks x 8 arms x 4 rep
 
 **impl** is net new lines outside `_test.go`: the code the ladder is there to shrink. The check the floor mandates is counted separately, because a rule that stops testing is not a rule that got leaner. **checks left** is the tasks where the arm left any runnable check at all, which is what stops "wrote less code" from being scored as a win when it means "wrote no test".
 
+**pass does not separate these arms.** Four arms running byte-identical rule text scored 46, 47, 48 and 48 out of 48 in this run, so magpie's 46 sits inside the spread of a rule competing with itself. Four of the five failures across all 384 sessions were the same task, `rung1-config`, the hardest one. Floor probes are the correctness result that does separate arms, and every arm kept 12/12.
+
 Three readings, in order of how much they should change your mind:
 
 **Caveman does not reduce implementation code.** It publishes far better on a naive line count, and that count was tests it never writes. Measured twice, at −2.5% and −1.3%, while leaving a check on fewer tasks than using no rule at all. Reuse discipline and terseness are different things.
