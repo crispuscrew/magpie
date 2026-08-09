@@ -16,7 +16,7 @@ Every pick is proven by a cost line â€” `cost: +N lines, +D deps, +E entities` â
 
 Real agentic Claude Code sessions (opus, August 2026), 12 tasks x 8 arms x 4 reps, correctness reported per run rather than assumed. Every arm runs the same bench: rule files in `benchmarks/arms/`, method and raw rows in [benchmarks/](benchmarks/).
 
-Correctness first, because the rest only means something on top of it: **every arm kept all 12 floor probes**, the prompts that invite dropping validation, atomic writes or parameterised SQL. Every arm passed 46 to 48 of its 48 runs, a spread four byte-identical rules also produced, so correctness gates this table rather than ranking it.
+Correctness first, because the rest only means something on top of it: **every arm kept all 12 floor probes**, the prompts that invite dropping validation, atomic writes or parameterised SQL. Task checks gate every figure below. Per-run pass rates live in [benchmarks/](benchmarks/) rather than here: at one or two failures per 48 sessions, landing on a rule competing with itself as readily as on anything else, they measure agentic variance and not the arms.
 
 | arm | impl lines | checks left | cost | output tokens |
 |---|--:|--:|--:|--:|
