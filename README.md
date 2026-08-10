@@ -4,7 +4,13 @@
 
 **An always-on rule that makes AI coding agents build with what already exists.** Stop at the first rung that holds, prove the pick with a cost line, never simplify away the floor.
 
-> **−22% implementation code** · **−14% cost** per session · **−11% tokens**, output down 23%
+<table>
+<tr>
+<td align="center"><h1>−22%</h1>implementation code</td>
+<td align="center"><h1>−14%</h1>cost per session</td>
+<td align="center"><h1>−11%</h1>tokens, output −23%</td>
+</tr>
+</table>
 
 1. Needs to exist at all? → skip it (YAGNI)
 2. Already in this codebase? → reuse it
@@ -27,15 +33,11 @@ Agentic Claude Code sessions (opus, August 2026), 12 tasks × 8 arms × 4 reps. 
 | ponytail | −15% | 10/12 | −3% | −6% |
 | caveman | −2% | 7/12 | −5% | −18% |
 
-**impl** is net new lines outside `_test.go`. The check the floor mandates is counted separately, because a rule that stops testing is not a rule that got leaner, and **checks left** is what keeps that honest.
+**impl** is net new lines outside `_test.go`; the check the floor mandates is counted separately, and **checks left** is what stops "wrote less code" from meaning "wrote no test".
 
-**Caveman does not reduce implementation code.** It looks far better on a naive line count, and that count was tests it never writes. Measured twice, at −2% and −1%, leaving a check on fewer tasks than using no rule at all.
+That distinction is the whole result for caveman. It looks strong on a naive line count, and the count was tests it never writes: −2% implementation, measured twice, leaving checks on fewer tasks than using no rule at all. Magpie and ponytail are not separable, three runs having failed to put the gap outside the noise.
 
-**Magpie and ponytail are not separable here.** Three runs failed to put the gap outside the noise, and saying so beats a ranking the bench cannot support.
-
-**The rule pays for itself.** ~426 tokens in per session, ~12,000 back.
-
-**Error bars.** Four arms injecting byte-identical text landed 4 points apart, so anything narrower is not a result. Between runs it is worse: two rules swapped places by 29 lines across two nights. One fixture, one language, 12 tasks. Per-run pass rates and raw rows are in [benchmarks/](benchmarks/), not here, because at one or two failures per 48 sessions they measure agentic variance rather than any arm.
+**Error bars.** Four arms injecting byte-identical text landed 4 points apart, so narrower gaps are not results, and between runs two rules swapped places by 29 lines. One fixture, one language, 12 tasks. Raw rows and per-run pass rates in [benchmarks/](benchmarks/).
 
 ## Install
 
@@ -50,6 +52,27 @@ Agentic Claude Code sessions (opus, August 2026), 12 tasks × 8 arms × 4 reps. 
 | Kiro | copy `.kiro/steering/magpie.md` |
 | `.agents/` workspace-rule hosts | copy `.agents/rules/magpie.md` |
 | anything else | paste `AGENTS.md` into the system prompt |
+
+**Or let the agent do it.** Paste this into whatever agent you already have open:
+
+```
+Install the magpie rule in this repository. Work out which agent config this
+repo already uses, then fetch the matching file from
+https://raw.githubusercontent.com/crispuscrew/magpie/main/<path> and write it
+to the same path here:
+
+  AGENTS.md                        Codex, Gemini CLI, Copilot CLI, Antigravity
+  .cursor/rules/magpie.mdc         Cursor
+  .windsurf/rules/magpie.md        Windsurf
+  .clinerules/magpie.md            Cline
+  .github/copilot-instructions.md  GitHub Copilot
+  .kiro/steering/magpie.md         Kiro
+  .agents/rules/magpie.md          .agents workspace hosts
+
+Take every path whose directory already exists, and AGENTS.md if none do.
+Fetch each file rather than retyping it: the host frontmatter differs per
+path and is load-bearing. Do not edit the rule text.
+```
 
 All seven host files, the Claude Code skill included, are generated from `AGENTS.md` (`make adapters`); CI fails on drift. What you install is what gets benchmarked.
 
