@@ -2,7 +2,7 @@
 
 ### Reuse before you write.
 
-**An always-on rule that makes AI coding agents build with what already exists.** Stop at the first rung that holds, prove the pick with a cost line, never simplify away the floor.
+An always-on rule for AI coding agents.
 
 ## −22% implementation code · −14% cost · −11% tokens
 
@@ -27,8 +27,7 @@ Every pick carries `cost: +N lines, +D deps, +E entities`. The **floor** survive
 Paste this into any agent you already have open. It installs globally, for every project:
 
 ```
-Install the magpie rule globally, so it applies to every repo I work in and
-not just this one.
+Install the magpie rule globally, for every repo and not just this one.
 
 Fetch https://raw.githubusercontent.com/crispuscrew/magpie/main/AGENTS.md and
 append it, under a "# Magpie" heading, to your own user-level rules file: the
@@ -40,7 +39,7 @@ Append only. Never overwrite or reorder what is already in that file, and
 create it only if it does not exist. Tell me the path you used.
 ```
 
-For Claude Code the plugin below is already global and is the better route. For a single repo instead, copy the file for your host:
+Or by hand:
 
 | Host | Copy to |
 |---|---|
