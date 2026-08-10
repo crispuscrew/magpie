@@ -4,9 +4,15 @@
 
 An always-on rule for AI coding agents.
 
+```
+       __
+ \\\\_(o )>
+      \__/
+```
+
 <div align="center">
 
-# −22% code · −14% cost · −11% tokens
+# −22% code&emsp;&emsp;−14% cost&emsp;&emsp;−11% tokens
 
 </div>
 
