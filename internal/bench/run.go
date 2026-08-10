@@ -51,6 +51,7 @@ type Row struct {
 	Pass       bool
 	DurationMs int64
 	CostUSD    float64 `json:",omitempty"`
+	Tokens     Tokens  `json:"tokens,omitzero"`
 	CheckTail  string  `json:",omitempty"`
 	Error      string  `json:",omitempty"`
 }
@@ -59,6 +60,27 @@ type Row struct {
 // windows during long unattended runs; each retry gets a fresh work tree.
 var retryWaits = []time.Duration{time.Minute, 10 * time.Minute, 30 * time.Minute,
 	time.Hour, time.Hour, time.Hour, time.Hour, time.Hour, time.Hour}
+
+// preflight runs the check command against the untouched fixture, which passes
+// its own selfcheck, before any paid agent session starts. A broken check
+// command (missing container image, no engine, bad -check-cmd) otherwise marks
+// every run failed and the whole matrix reads as "every arm wrote bad code".
+func preflight(cfg Config) error {
+	dir, err := os.MkdirTemp("", "magpie-preflight-*")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+	if err := copyTree(cfg.FixtureDir, dir); err != nil {
+		return err
+	}
+	if pass, checkTail := runCheck(dir, cfg.CheckCmd); !pass {
+		return fmt.Errorf("preflight: the check command fails on the untouched fixture, "+
+			"so every run would be scored a failure. Fix the harness before spending on agents.\n"+
+			"  command: %s\n%s", cfg.CheckCmd, checkTail)
+	}
+	return nil
+}
 
 // Run executes tasks × arms × repeats, streams JSONL rows, writes the summary.
 func Run(cfg Config) (string, error) {
@@ -72,6 +94,9 @@ func Run(cfg Config) (string, error) {
 	}
 	if cfg.CheckCmd == "" {
 		cfg.CheckCmd = autoCheckCmd(cfg.Image, cfg.EngineFlags)
+	}
+	if err := preflight(cfg); err != nil {
+		return "", err
 	}
 	if err := os.MkdirAll(cfg.OutDir, 0o755); err != nil {
 		return "", err
@@ -138,7 +163,7 @@ func runOne(cfg Config, task Task, arm, rule string) Row {
 		row.Error = err.Error()
 		return row
 	}
-	row.DurationMs, row.CostUSD = outcome.DurationMs, outcome.CostUSD
+	row.DurationMs, row.CostUSD, row.Tokens = outcome.DurationMs, outcome.CostUSD, outcome.Tokens
 
 	metrics, err := CollectMetrics(workdir)
 	if err != nil {

@@ -1,0 +1,1 @@
+../../variants/magpie-tight.md

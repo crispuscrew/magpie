@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -17,7 +18,21 @@ import (
 type RunOutcome struct {
 	DurationMs int64
 	CostUSD    float64
+	Tokens     Tokens
 }
+
+// Tokens is one session's usage. Kept split because the four are priced very
+// differently: a cache read is roughly a tenth of fresh input, so summing them
+// into one number would hide where a rule actually spends.
+type Tokens struct {
+	In            int `json:"in,omitempty"`
+	Out           int `json:"out,omitempty"`
+	CacheCreation int `json:"cache_creation,omitempty"`
+	CacheRead     int `json:"cache_read,omitempty"`
+}
+
+// Total is every token the session touched, cache included.
+func (t Tokens) Total() int { return t.In + t.Out + t.CacheCreation + t.CacheRead }
 
 // Backend runs one task prompt against a work tree. rule is the magpie rule
 // text ("" for the baseline arm).
@@ -48,19 +63,34 @@ func (ClaudeBackend) Run(ctx context.Context, workdir, prompt, rule, model strin
 		TotalCostUSD float64 `json:"total_cost_usd"`
 		IsError      bool    `json:"is_error"`
 		Result       string  `json:"result"`
+		Usage        struct {
+			InputTokens         int `json:"input_tokens"`
+			OutputTokens        int `json:"output_tokens"`
+			CacheCreationTokens int `json:"cache_creation_input_tokens"`
+			CacheReadTokens     int `json:"cache_read_input_tokens"`
+		} `json:"usage"`
 	}
 	parsed := json.Unmarshal(out, &result) == nil
 	if runErr != nil || (parsed && result.IsError) {
 		msg := tail(out, 400)
+		var exitErr *exec.ExitError
 		if parsed && result.Result != "" {
 			msg = head(result.Result, 300) // the failure reason leads the result text
+		} else if errors.As(runErr, &exitErr) && len(exitErr.Stderr) > 0 {
+			msg = tail(exitErr.Stderr, 400)
 		}
 		return RunOutcome{}, fmt.Errorf("claude (%v): %s", runErr, msg)
 	}
 	if !parsed {
 		return RunOutcome{}, fmt.Errorf("claude output not json: %s", tail(out, 400))
 	}
-	return RunOutcome{DurationMs: result.DurationMs, CostUSD: result.TotalCostUSD}, nil
+	return RunOutcome{DurationMs: result.DurationMs, CostUSD: result.TotalCostUSD,
+		Tokens: Tokens{
+			In:            result.Usage.InputTokens,
+			Out:           result.Usage.OutputTokens,
+			CacheCreation: result.Usage.CacheCreationTokens,
+			CacheRead:     result.Usage.CacheReadTokens,
+		}}, nil
 }
 
 func head(text string, max int) string {

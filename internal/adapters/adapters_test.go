@@ -80,7 +80,11 @@ func TestRuleInvariants(t *testing.T) {
 		"cost: +N lines, +D deps, +E entities",
 		"reuse:",
 	}
-	for _, relPath := range []string{"AGENTS.md", "skills/magpie/SKILL.md"} {
+	// Candidate arms are included so a variant cannot win the bench by quietly
+	// dropping the floor: a rule that tests less is cheaper, and that is the one
+	// way to improve the numbers that must never count as an improvement.
+	for _, relPath := range []string{"AGENTS.md", "skills/magpie/SKILL.md",
+		"variants/magpie-tight.md"} {
 		data, err := os.ReadFile(filepath.Join("../..", relPath))
 		if err != nil {
 			t.Fatal(err)

@@ -1,0 +1,1 @@
+../../skills/magpie/SKILL.md
