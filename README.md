@@ -6,6 +6,12 @@
 
 ## −22% implementation code · −14% cost · −11% tokens
 
+```diff
+  12 tasks, one Go fixture, Claude Code on opus
+- 323 implementation lines   $0.49 a session   no rule
++ 252 implementation lines   $0.42 a session   magpie
+```
+
 1. Needs to exist at all? → skip it (YAGNI)
 2. Already in this codebase? → reuse it
 3. Stdlib does it? → use it
@@ -18,28 +24,34 @@ Every pick carries `cost: +N lines, +D deps, +E entities`. The **floor** survive
 
 ## Install
 
-Paste this into any agent you already have open:
+Paste this into any agent you already have open. It installs globally, for every project:
 
 ```
-Install the magpie rule in this repo. For every path below whose directory
-already exists (AGENTS.md if none do), fetch
-https://raw.githubusercontent.com/crispuscrew/magpie/main/<path> and write it
-to the same path here. Fetch rather than retype: the frontmatter differs per
-host and is load-bearing.
+Install the magpie rule globally, so it applies to every repo I work in and
+not just this one.
 
-AGENTS.md  .cursor/rules/magpie.mdc  .windsurf/rules/magpie.md
-.clinerules/magpie.md  .github/copilot-instructions.md
-.kiro/steering/magpie.md  .agents/rules/magpie.md
+Fetch https://raw.githubusercontent.com/crispuscrew/magpie/main/AGENTS.md and
+append it, under a "# Magpie" heading, to your own user-level rules file: the
+one that applies across all projects. That is ~/.claude/CLAUDE.md for Claude
+Code, ~/.codex/AGENTS.md for Codex, ~/.gemini/GEMINI.md for Gemini CLI, or
+whichever path your own docs give for global rules.
+
+Append only. Never overwrite or reorder what is already in that file, and
+create it only if it does not exist. Tell me the path you used.
 ```
 
-Or by hand:
+For Claude Code the plugin below is already global and is the better route. For a single repo instead, copy the file for your host:
 
-| Host | How |
+| Host | Copy to |
 |---|---|
-| Claude Code | `/plugin marketplace add crispuscrew/magpie` then `/plugin install magpie@magpie` (installs `skills/magpie/SKILL.md`) |
-| Codex / Gemini CLI / Copilot CLI / Antigravity | copy `AGENTS.md` to the repo root |
-| Cursor · Windsurf · Cline · Kiro | copy the matching path listed above |
-| GitHub Copilot | copy `.github/copilot-instructions.md` |
+| Claude Code | `/plugin marketplace add crispuscrew/magpie` then `/plugin install magpie@magpie` (installs `skills/magpie/SKILL.md`, globally) |
+| Codex / Gemini CLI / Copilot CLI / Antigravity | `AGENTS.md` at the repo root |
+| Cursor | `.cursor/rules/magpie.mdc` |
+| Windsurf | `.windsurf/rules/magpie.md` |
+| Cline | `.clinerules/magpie.md` |
+| GitHub Copilot | `.github/copilot-instructions.md` |
+| Kiro | `.kiro/steering/magpie.md` |
+| `.agents/` workspace hosts | `.agents/rules/magpie.md` |
 | anything else | paste `AGENTS.md` into the system prompt |
 
 All seven host files, the Claude Code skill included, are generated from `AGENTS.md` (`make adapters`); CI fails on drift. What you install is what gets benchmarked.
