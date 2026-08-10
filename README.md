@@ -4,7 +4,11 @@
 
 An always-on rule for AI coding agents.
 
-## −22% implementation code · −14% cost · −11% tokens
+<div align="center">
+
+# −22% code · −14% cost · −11% tokens
+
+</div>
 
 ```diff
   12 tasks, one Go fixture, Claude Code on opus
@@ -12,13 +16,15 @@ An always-on rule for AI coding agents.
 + 252 implementation lines   $0.42 a session   magpie
 ```
 
-1. Needs to exist at all? → skip it (YAGNI)
-2. Already in this codebase? → reuse it
-3. Stdlib does it? → use it
-4. Native platform feature? → use it
-5. Installed dependency? → use it
-6. One line? → one line
-7. Only then: the minimum that works
+```
+1  needs to exist at all?     →  skip it (YAGNI)
+2  already in this codebase?  →  reuse it
+3  stdlib does it?            →  use it
+4  native platform feature?   →  use it
+5  installed dependency?      →  use it
+6  one line?                  →  one line
+7  otherwise                  →  the minimum that works
+```
 
 Every pick carries `cost: +N lines, +D deps, +E entities`. The **floor** survives even a prompt that says "simplify": trust-boundary validation, data-loss handling, security, accessibility, one runnable check. Deliberate shortcuts are marked `// reuse: <ceiling>, <upgrade path>`.
 
